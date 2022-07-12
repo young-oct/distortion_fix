@@ -80,18 +80,11 @@ if __name__ == '__main__':
     ori_mip = np.amax(data_ori, axis=2)
     dec_mip = np.amax(data_decon, axis=2)
 
-    # ori_mip = np.sum(data_ori, axis=2)
-    # ori_mip /= np.max(ori_mip) * 255
-
-
-    #
-    # dec_mip = np.sum(data_decon, axis=2)
-    # dec_mip /= np.max(dec_mip)* 255
-
-
     p_factor = 0.65
     vmin, vmax = int(255 * p_factor), 255
 
+    # vmin = 63
+    # vmax = 133
     fig, ax = plt.subplots(2, 2, figsize=(16, 9))
     ax[0, 0].imshow(ori_mip, 'gray', vmin=vmin, vmax=vmax)
     ax[0, 0].set_axis_off()
@@ -109,156 +102,24 @@ if __name__ == '__main__':
 
     plt.show()
 
-    # thresholding images to create binary images
-    bn_ori = np.clip(ori_mip, vmin, vmax)
-    bn_dec = np.clip(dec_mip, vmin, vmax)
+    # thresholding images to create binary maksk
+    ret, msk = cv.threshold(ori_mip,200,vmax,cv.THRESH_BINARY)
+    plt.imshow(msk,'gray')
+    plt.show()
 
-    # converted to the corrected data format for processing
-    temp = convert(bn_dec,0, 255,np.uint8)
+    # Extract chess-board
+    krn = cv.getStructuringElement(cv.MORPH_RECT, (200, 200))
+    dlt = cv.dilate(msk, krn, iterations=100)
+    res = 255 - cv.bitwise_and(dlt, msk)
+    plt.imshow(res,'gray')
+    plt.show()
 
-    # image_inverted = np.array(256 - temp, dtype = np.uint8)
+    # Displaying chess-board features
+    res = np.uint8(res)
+    ret, corners = cv.findChessboardCorners(res, (3,3),
+                                             flags=cv.CALIB_CB_ADAPTIVE_THRESH +
+                                                   cv.CALIB_CB_FAST_CHECK +
+                                                   cv.CALIB_CB_NORMALIZE_IMAGE)
 
-
-
-    # plt.imshow(temp)
-    # plt.show()
-
-
-    # kernel = np.array([[0, -1, 0],
-    #                    [-1, 5, -1],
-    #                    [0, -1, 0]])
-    # temp = cv.filter2D(src=bn_dec, ddepth=-2, kernel=kernel)
-    #
-    # # dst = cv.cornerHarris(np.float32(bn_ori), 2,3,0.04)
-    # # dst = cv.dilate(dst,None)
-    # # np.float32(bn_ori)[dst > 0.01*np.max(np.float32(bn_ori))] = [0,255]
-    #
-    ret, corners = cv.findChessboardCorners(temp, checked_board, flags=cv.CALIB_CB_ADAPTIVE_THRESH
-                                                + cv.CALIB_CB_EXHAUSTIVE)
-    # ret, corners = cv.findChessboardCorners(bn_dec.astype('uint8'), checked_board, None)
     print(ret)
 
-    # gray = np.float32(bn_ori)
-    # dst = cv.cornerHarris(gray, 2, 3, 0.04)
-    # # result is dilated for marking the corners, not important
-    # dst = cv.dilate(dst, None)
-    # # Threshold for an optimal value, it may vary depending on the image.
-    # gray[dst > 0.01 * dst.max()] = [0, 0, 255]
-
-
-    #
-    #
-    # image = load_from_oct_file(data[-1])
-    # temp = np.sum(image,axis=2) - np.mean(image, axis=2)
-    # img = temp/temp.max()
-    # img *= 255
-    #
-    # from skimage import feature
-
-    from skimage import filters
-
-    # edge_roberts = filters.roberts(img)
-    # edge_sobel = filters.sobel(img)
-    # kernel = np.array([[0, -1, 0],
-    #                    [-1, 5, -1],
-    #                    [0, -1, 0]])
-    # image_sharp = cv.filter2D(src=tmp, ddepth=-1, kernel=kernel)
-    #
-    # edges2 = feature.canny(im, sigma=12)
-    # # tmp = np.clip(edges2,10,60)
-    # plt.imshow(edges2,'gray')
-    # plt.show()
-    #
-    # # hlow = 120
-
-    # kernel = np.array([[0, -1, 0],
-    #                    [-1, 5, -1],
-    #                    [0, -1, 0]])
-    # image_sharp = cv.filter2D(src=img, ddepth=-2, kernel=kernel)
-    # tmp = np.where(img > hlow, hlow, img)
-
-    # data_mpi = []
-    # #
-    # for i in range(1):
-    #     image = load_from_oct_file(data[i])
-    #     img_mpi = np.(image, axis=2).astype('uint8')
-    # plt.imshow(img_mpi, 'gray')
-    # plt.show()
-    # #
-    # #     # create the mip image from original image
-    #     img_mpi = np.amax(image, axis=2).astype('uint8')
-    #     img_mpi = np.amax(image, axis=2)
-    #     data_mpi.append(img_mpi)
-    # plt.imshow(img_mpi, 'gray', vmin=190, vmax = 255)
-    # plt.show()
-    # #
-    # print('done')
-    #
-    # # Define the dimensions of checkerboard
-    # height,width = 4,4
-    # checked_board = (height, width)
-    # # termination criteria
-    # criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
-    # # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
-    # objp = np.zeros((height * width, 3), np.float32)
-    # objp[:, :2] = np.mgrid[0:height, 0:width].T.reshape(-1, 2)
-    #
-    # square_size = 0.2 # physical square size is 0.2mm
-    # objp = objp * square_size
-    #
-    # # Arrays to store object points and image points from all the images.
-    # objpoints = []  # 3d point in real world space
-    # imgpoints = []  # 2d points in image plane.
-    #
-    # # pics = []
-    # # low = 215
-    # # # for img in data_mpi:
-    # # tmp = np.where(data_mpi[0] <= low, 0,255).astype('uint8')
-    # #     # pics.append(tmp)
-    # # plt.imshow(tmp,'gray', vmin = low, vmax = 255)
-    # # plt.show()
-    #
-    # # termination criteria
-    # criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
-    # # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
-    # objp = np.zeros((6 * 7, 3), np.float32)
-    # objp[:, :2] = np.mgrid[0:7, 0:6].T.reshape(-1, 2)
-    # # Arrays to store object points and image points from all the images.
-    # objpoints = []  # 3d point in real world space
-    # imgpoints = []  # 2d points in image plane.
-    #
-    # # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
-    # objp = np.zeros((2 * 2, 3), np.float32)
-    # objp[:, :2] = np.mgrid[0:2, 0:2].T.reshape(-1, 2)
-    # Arrays to store object points and image points from all the images.
-    # objpoints = []  # 3d point in real world space
-    # imgpoints = []  # 2d points in image plane.
-    # # #
-    # criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
-    # #
-    # images = glob.glob('../data/distorted/*.jpeg')
-    # for fname in images:
-    #     img = cv.imread(fname)
-    #     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-    #
-    #     # temp = img_mpi
-    #     # temp = np.where(temp < 190, 0, 255).astype('uint8')
-
-    # kernel = np.array([[0, -1, 0],
-    #                    [-1, 5, -1],
-    #                    [0, -1, 0]])
-    # image_sharp = cv.filter2D(src=tmp, ddepth=-1, kernel=kernel)
-    # plt.imshow(image_sharp, 'gray')
-    # plt.show()
-
-    # gray = tmp.astype('uint8')
-    # ret, corners = cv.findChessboardCorners(gray, (3, 3), None)
-    # print(ret)
-    # #
-    #     corners2 = cv.cornerSubPix(gray,corners, (11,11), (-1,-1), criteria)
-    #
-    #     cv.drawChessboardCorners(img, (3,3), corners2, ret)
-    #     plt.imshow(img)
-    #     plt.show()
-    #     # cv.waitKey(500)
-    #

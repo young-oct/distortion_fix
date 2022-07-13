@@ -157,8 +157,9 @@ if __name__ == '__main__':
     plt.show()
 
     mask = binary_mask(mip_slice,vmin, vmax )
-    mask = ndimage.median_filter(mask, size=2)
-    mask = cv.filter2D(src=ndimage.gaussian_filter(mask, sigma=4), ddepth=-1, kernel=kernel)
+    mask = ndimage.median_filter(mask, size=3)
+    mask = ndimage.gaussian_filter(mask, sigma=0.2)
+    # mask = cv.filter2D(src=ndimage.gaussian_filter(mask, sigma=4), ddepth=-1, kernel=kernel)
 
     res = np.uint8(mask)
     ret, corners = cv.findChessboardCorners(res, checked_board,
@@ -169,9 +170,9 @@ if __name__ == '__main__':
     fig, ax = plt.subplots(1, 1, figsize=(16, 9))
 
     if ret:
-        corners2 = cv.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
+        corners2 = cv.cornerSubPix(res, corners, (11, 11), (-1, -1), criteria)
 
-        cv.drawChessboardCorners(gray, checked_board, corners2, ret)
+        cv.drawChessboardCorners(res, checked_board, corners2, ret)
 
         corners2 = np.squeeze(corners2)
         for corner in corners2:
@@ -181,7 +182,7 @@ if __name__ == '__main__':
 
     plt.title('OCT', size=20)
     plt.axis('off')
-    plt.imshow(res, 'gray')
+    plt.imshow(res,'gray')
     plt.tight_layout()
     plt.show()
     print(ret)

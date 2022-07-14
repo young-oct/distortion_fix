@@ -10,6 +10,9 @@ from matplotlib.patches import Circle
 from scipy import ndimage, misc
 import matplotlib.pyplot as plt
 from tools.auxiliary import folder_creator, arrTolist, listtoarr, load_from_oct_file
+from tools.dicom_converter import oct_to_dicom
+from os.path import join
+
 
 def convert(img, target_type_min, target_type_max, target_type):
     imin = img.min()
@@ -19,7 +22,6 @@ def convert(img, target_type_min, target_type_max, target_type):
     b = target_type_max - a * imax
     new_img = (a * img + b).astype(target_type)
     return new_img
-
 
 def max_slice(volume):
     # take a volume and find the index of the maximum intensity
@@ -137,3 +139,53 @@ if __name__ == '__main__':
 
     plt.tight_layout()
     plt.show()
+
+    #create dicom stacks for comparison
+    dicom_path = join('../', 'validation dicom')
+    resolutionx, resolutiony, resolutionz = 0.026, 0.026, 0.030
+
+    folder_creator(dicom_path)
+
+    file_path = 'distorted'
+    f_path = join(dicom_path,file_path)
+    folder_creator(f_path)
+
+    patient_info = {'PatientName': 'RESEARCH',
+                    'PatientBirthDate': '19600507',
+                    'PatientSex': 'F',
+                    'PatientAge': '63Y',
+                    'PatientID': '202207070001',
+                    'SeriesDescription': file_path,
+                    'StudyDescription': 'OCT 3D'}
+
+    oct_to_dicom(val_data, resolutionx=resolutionx,
+                 resolutiony=resolutiony,resolutionz = resolutionz,
+                 dicom_folder=f_path,
+                 **patient_info)
+    #
+    print('Done creating dicom stacks for distorted validation dataset')
+
+    val_undis = np.zeros_like(val_data)
+    for i in range(val_data.shape[-1]):
+        val_undis[:,:,i] = cv.remap(val_data[:,:,i], mapx, mapy, cv.INTER_LINEAR)
+
+    print('Done undistorting validation dataset')
+
+    file_path = 'undistorted'
+    f_path = join(dicom_path,file_path)
+    folder_creator(f_path)
+
+    patient_info = {'PatientName': 'RESEARCH',
+                    'PatientBirthDate': '19600507',
+                    'PatientSex': 'F',
+                    'PatientAge': '63Y',
+                    'PatientID': '202107070001',
+                    'SeriesDescription': file_path,
+                    'StudyDescription': 'OCT 3D'}
+
+    oct_to_dicom(val_undis, resolutionx=resolutionx,
+                 resolutiony=resolutiony,resolutionz = resolutionz,
+                 dicom_folder=f_path,
+                 **patient_info)
+    #
+    print('Done creating dicom stacks for undistorted validation dataset')

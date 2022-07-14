@@ -3,18 +3,13 @@
 # @Author  : young wang
 # @FileName: distortion_fix.py
 # @Software: PyCharm
-
-
 import glob
 import numpy as np
 import cv2 as cv
 from matplotlib.patches import Circle
 from scipy import ndimage, misc
-
 import matplotlib.pyplot as plt
-
 from tools.auxiliary import folder_creator, arrTolist, listtoarr, load_from_oct_file
-
 
 def convert(img, target_type_min, target_type_max, target_type):
     imin = img.min()
@@ -54,12 +49,19 @@ def binary_mask(slice, vmin, vmax):
 if __name__ == '__main__':
 
     data = glob.glob('../data/2022.07.13_1mm(3dprint)/trial 5/*.oct')
-    # image = glob.glob('../data/2022.07.12_1mm(3dprint)/trial 2/*.png')
 
     # Define the dimensions of checkerboard
     height, width = 4, 4
     checked_board = (height, width)
-    criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 100, 0.001)
+    criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 1000, 0.0001)
+
+    # Initialize enpty list to accumulate coordinates
+    objpoints = []  # 3d world coordinates
+    imgpoints = []  # 2d image coordinates
+
+    objp = np.zeros((1,
+                     checked_board[0] * checked_board[1], 3), np.float32)
+    objp[0, :, :2] = np.mgrid[0:checked_board[0], 0:checked_board[1]].T.reshape(-1, 2)
 
     fig, ax = plt.subplots(1,len(data), figsize = (16, 9))
 
@@ -74,67 +76,10 @@ if __name__ == '__main__':
         pad = 10
         mip_slice = mip_stack(data_ori, index, pad)
 
-        # med_slice = ndimage.median_filter(mip_slice, size=3)
-        #
-        # guassian_slice = ndimage.gaussian_filter(med_slice, sigma=0.2)
-        #
-        # kernel = np.array([[0, -1, 0],
-        #                    [-1, 5, -1],
-        #                    [0, -1, 0]])
-        # sharp_slice = cv.filter2D(src=guassian_slice, ddepth=-1, kernel=kernel)
-
         p_factor = 0.65
         vmin, vmax = int(255 * p_factor), 255
-        #
-        # fig, ax = plt.subplots(3, 4, figsize=(16, 9))
-        # ax[0,0].imshow(mip_slice, 'gray', vmin=vmin, vmax=vmax)
-        # ax[0,0].set_axis_off()
-        # ax[0,0].set_title('mip of the original volume', size=20)
-        #
-        # # plot histogram to find the cut-off for thresholding
-        # ax[1, 0].hist(np.ravel(mip_slice), density=True)
-        #
-        # ax[2,0].imshow(binary_mask(mip_slice,vmin, vmax), 'gray', vmin=vmin, vmax=vmax)
-        # ax[2,0].set_axis_off()
-        # ax[2,0].set_title('binary image', size=20)
-        #
-        # ax[0, 1].imshow(med_slice, 'gray', vmin=vmin, vmax=vmax)
-        # ax[0, 1].set_title('median filter', size=20)
-        # ax[0, 1].set_axis_off()
-        #
-        # # plot histogram to find the cut-off for thresholding
-        # ax[1, 1].hist(np.ravel(med_slice), density=True)
-        #
-        # ax[2,1].imshow(binary_mask(med_slice,vmin, vmax), 'gray', vmin=vmin, vmax=vmax)
-        # ax[2,1].set_axis_off()
-        # ax[2,1].set_title('binary image', size=20)
-        #
-        # ax[0, 2].imshow(guassian_slice, 'gray', vmin=vmin, vmax=vmax)
-        # ax[0, 2].set_title('guassian filter', size=20)
-        # ax[0, 2].set_axis_off()
-        #
-        # # plot histogram to find the cut-off for thresholding
-        # ax[1, 2].hist(np.ravel(guassian_slice), density=True)
-        #
-        # ax[2,2].imshow(binary_mask(guassian_slice,vmin, vmax ), 'gray', vmin=vmin, vmax=vmax)
-        # ax[2,2].set_axis_off()
-        # ax[2,2].set_title('binary image', size=20)
-        #
-        # ax[0, 3].imshow(sharp_slice, 'gray', vmin=vmin, vmax=vmax)
-        # ax[0, 3].set_title('sharp filter', size=20)
-        # ax[0, 3].set_axis_off()
-        #
-        # # plot histogram to find the cut-off for thresholding
-        # ax[1, 3].hist(np.ravel(sharp_slice), density=True)
-        #
-        # ax[2,3].imshow(binary_mask(sharp_slice,vmin, vmax), 'gray', vmin=vmin, vmax=vmax)
-        # ax[2,3].set_axis_off()
-        # ax[2,3].set_title('binary image', size=20)
-        #
-        # plt.tight_layout()
-        # plt.show()
 
-        mask = binary_mask(mip_slice,vmin, vmax )
+        mask = binary_mask(mip_slice,vmin, vmax)
         mask = ndimage.median_filter(mask, size=3)
         mask = ndimage.gaussian_filter(mask, sigma=0.1)
 
@@ -143,12 +88,13 @@ if __name__ == '__main__':
                                                 flags=cv.CALIB_CB_ADAPTIVE_THRESH +
                                                       cv.CALIB_CB_FAST_CHECK +
                                                       cv.CALIB_CB_NORMALIZE_IMAGE)
-
-        # fig, ax = plt.subplots(1, , figsize=(16, 9))
-
         if ret:
-            # print(data[i])
+
+            # If found, add object points, image points (after refining them)
+            objpoints.append(objp)
+
             corners2 = cv.cornerSubPix(res, corners, (13, 13), (-1, -1), criteria)
+            imgpoints.append(corners2)
 
             cv.drawChessboardCorners(res, checked_board, corners2, ret)
 
@@ -158,10 +104,36 @@ if __name__ == '__main__':
                 circ = Circle(coord, 5, edgecolor='r', fill=True, linewidth=1, facecolor='r')
                 ax[i].add_patch(circ)
 
-        # plt.title('OCT', size=20)
         ax[i].set_title('trial '+ str(i), size = 20)
         ax[i].set_axis_off()
         ax[i].imshow(res,'gray', vmin= vmin, vmax = vmax )
     plt.tight_layout()
     plt.show()
-        # print(ret)
+
+    h, w = res.shape[:2]
+    ret, mtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, imgpoints, res.shape[::-1], None, None)
+
+    val_data = load_from_oct_file('../data/validation/2022-Jul-13_02.04.07_PM_Bin_Capture.oct')
+    index = max_slice(val_data)
+
+    # constructed maximum intensity projections from a stack with
+    # certain thickness
+    pad = 10
+    val_slice = mip_stack(val_data, index, pad)
+
+    # undistort
+    newcameramtx, roi = cv.getOptimalNewCameraMatrix(mtx, dist, (w, h), 1, (w, h))
+    mapx, mapy = cv.initUndistortRectifyMap(mtx, dist, None, newcameramtx, (w, h), 5)
+    dst = cv.remap(val_slice, mapx, mapy, cv.INTER_LINEAR)
+
+    fig,ax = plt.subplots(1,2, figsize = (16,9))
+    ax[0].set_title('distorted validation image', size=25)
+    ax[0].set_axis_off()
+    ax[0].imshow(val_slice, 'gray', vmin=vmin, vmax=vmax)
+
+    ax[1].set_title('undistorted validation image', size=25)
+    ax[1].set_axis_off()
+    ax[1].imshow(dst, 'gray', vmin=vmin, vmax=vmax)
+
+    plt.tight_layout()
+    plt.show()

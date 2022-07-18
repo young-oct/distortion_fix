@@ -55,3 +55,6 @@ if __name__ == '__main__':
 
     plt.tight_layout()
     plt.show()
+
+    un_map = np.asarray(un_loc)
+    dis_map = np.asarray(dis_loc)

@@ -151,7 +151,30 @@ class sphere_fit:
         ax.set_title('radius = %.2f \n origin(x,y,z) is %s' % (self.r, origin))
         return fig
 
+
+def frame_index(volume, dir, index):
+    if dir == 'x':
+        slice = volume[index,:,:]
+    elif dir == 'y':
+        slice = volume[:,index,:]
+    else:
+        print("please enter direction")
+    '''get the index for the peaks in the each slice'''
+    peak_loc = []
+    for i in range(slice.shape[0]):
+        a_line = slice[i, :]
+        peaks, _ = find_peaks(a_line)
+        if len(peaks) != 0:
+
+            peak_loc.append((i, peaks[0]))
+        else:
+            pass
+    return peak_loc
+
+
 def surface_index(volume, dir):
+    '''get the index for the peaks in the each volume'''
+
     peak_loc = []
     if dir == 'x':
         for i in range(volume.shape[0]):

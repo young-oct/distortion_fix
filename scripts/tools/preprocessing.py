@@ -200,3 +200,30 @@ def surface_index(volume, dir):
     else:
         print("please enter direction")
     return peak_loc
+
+def max_slice(volume):
+    # take a volume and find the index of the maximum intensity
+    # slice
+    assert volume.ndim == 3
+
+    slice = np.sum(volume, axis=0)
+    line = np.sum(slice, axis=0)
+
+    return np.argmax(line)
+
+def mip_stack(volume, index, thickness):
+    assert volume.ndim == 3
+
+    low_b, high_b = int(index - thickness), int(index + thickness)
+
+    if low_b >= 0 or high_b <= volume.shape[-1]:
+        return np.amax(volume[:, :, low_b::high_b], axis=2)
+
+def convert(img, target_type_min, target_type_max, target_type):
+    imin = img.min()
+    imax = img.max()
+
+    a = (target_type_max - target_type_min) / (imax - imin)
+    b = target_type_max - a * imax
+    new_img = (a * img + b).astype(target_type)
+    return new_img

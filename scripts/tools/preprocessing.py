@@ -95,7 +95,7 @@ class sphere_fit:
         # self.dir = dir
         self.x = np.array(self.x)
         self.y = np.array(self.y)
-        self.z = np.array(self.z)
+        self.z = 330 - np.array(self.z) # included offset
         self.A = self.form_A()
         self.f = self.form_f()
         self.r, self.o = self.cal_sphere()

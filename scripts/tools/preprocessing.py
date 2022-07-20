@@ -84,15 +84,7 @@ class sphere_fit:
     def __init__(self, pts):
 
         self.x, self.y, self.z = zip(*pts)
-        # if dir == 'x':
-        #     self.x, self.y, self.z = zip(*pts)
-        #
-        # elif dir == 'y':
-        #     self.y, self.x, self.z = zip(*pts)
-        #
-        # else:
-        #     print("please enter direction")
-        # self.dir = dir
+
         self.x = np.array(self.x)
         self.y = np.array(self.y)
         self.z = 330 - np.array(self.z) # included offset
@@ -122,15 +114,10 @@ class sphere_fit:
         origin = (c[0], c[1], c[2])
         return radius, origin
 
-    def plot(self):
+    def plot(self, ax):
         r = self.r
         x0, y0, z0 = self.o[0], self.o[1], self.o[2]
-        # if self.dir == 'x':
-        #     x0, y0, z0 = self.o[0], self.o[1], self.o[2]
-        # elif self.dir == 'y':
-        #     y0, x0, z0 = self.o[0], self.o[1], self.o[2]
-        # else:
-        #     print("please enter direction")
+
         u, v = np.mgrid[0:2 * np.pi:20j, 0:np.pi:10j]
         x = np.cos(u) * np.sin(v) * r
         y = np.sin(u) * np.sin(v) * r
@@ -140,16 +127,13 @@ class sphere_fit:
         z = z + z0
         #
         # #   3D plot of Sphere
-        fig = plt.figure(figsize=plt.figaspect(0.5))
-
-        ax = fig.add_subplot(1, 1, 1, projection='3d')
-        if ax is None:
-            ax = plt.gca()
+        # fig = plt.figure(figsize=(8, 6))
+        # ax = fig.add_subplot(1, 1, 1, projection='3d')
         ax.scatter(self.x, self.y, self.z, zdir='z', s=0.1, c='b',alpha=0.3, rasterized=True)
         ax.plot_wireframe(x, y, z, color="r",)
         origin = np.asarray(self.o).flatten()
         ax.set_title('radius = %.2f \n origin(x,y,z) is %s' % (self.r, origin))
-        return fig
+        return ax
 
 
 def frame_index(volume, dir, index):

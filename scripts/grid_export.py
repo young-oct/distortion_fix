@@ -20,12 +20,12 @@ from skimage.morphology import (erosion, dilation, opening, closing,  # noqa
                                 white_tophat, disk, black_tophat, square, skeletonize)
 
 
+from natsort import natsorted
 
 
 if __name__ == '__main__':
 
-    data_sets = glob.glob('../data/1mW/1mm grid/*.oct')
-    data_sets.sort()
+    data_sets = natsorted(glob.glob('../data/1mW/1mm grid/*.oct'))
 
     data = []
     for i in range(len(data_sets)):

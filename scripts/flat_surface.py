@@ -5,6 +5,8 @@
 # @Software: PyCharm
 
 import glob
+from natsort import natsorted
+
 import numpy as np
 import matplotlib.pyplot as plt
 from tools.auxiliary import load_from_oct_file
@@ -12,60 +14,69 @@ from tools.preprocessing import filter_mask,surface_index,sphere_fit,frame_index
 
 if __name__ == '__main__':
 
-    data_sets = glob.glob('../data/1mW/flat surface/*.oct')
+    data_sets = natsorted(glob.glob('../data/1mW/flat surface/*.oct'))
 
-    data = load_from_oct_file(data_sets[0])
-    p_factor = 0.725
-    vmin, vmax = int(p_factor*255), 255
+    for j in range(len(data_sets)):
+        data = load_from_oct_file(data_sets[j])
+        p_factor = 0.725
+        vmin, vmax = int(p_factor*255), 255
 
-    xz_mask = np.zeros_like(data)
+        xz_mask = np.zeros_like(data)
 
-    # perform points extraction in the xz direction
-    for i in range(data.shape[0]):
-        xz_mask[i,:,:] = filter_mask(data[i,:,:],vmin = vmin, vmax = vmax)
+        # perform points extraction in the xz direction
+        for i in range(data.shape[0]):
+            xz_mask[i,:,:] = filter_mask(data[i,:,:],vmin = vmin, vmax = vmax)
 
-    xz_pts = surface_index(xz_mask, dir = 'x')
-    print('done with extracting points from the xz plane')
+        xz_pts = surface_index(xz_mask, dir = 'x')
+        # print('done with extracting points from the xz plane')
 
-    yz_mask = np.zeros_like(data)
+        yz_mask = np.zeros_like(data)
 
-    for i in range(data.shape[1]):
-        yz_mask[:,i,:] = filter_mask(data[:,i,:],vmin = vmin, vmax = vmax)
+        for i in range(data.shape[1]):
+            yz_mask[:,i,:] = filter_mask(data[:,i,:],vmin = vmin, vmax = vmax)
 
-    yz_pts = surface_index(yz_mask, dir = 'y')
+        yz_pts = surface_index(yz_mask, dir = 'y')
 
-    print('done with extracting points from the yz plane')
+        # print('done with extracting points from the yz plane')
 
-    xz = sphere_fit(xz_pts)
-    print('done with calculating radius and origin for the xz plane')
-    yz = sphere_fit(yz_pts)
-    print('done with calculating radius and origin for the yz plane')
+        xz = sphere_fit(xz_pts)
+        # print('done with calculating radius and origin for the xz plane')
+        yz = sphere_fit(yz_pts)
+        # print('done with calculating radius and origin for the yz plane')
 
-    idx = 256
-    fig,ax = plt.subplots(1,2, figsize = (16,9))
-    ax[0].imshow(xz_mask[idx,:,:], cmap='gray', vmin =vmin, vmax = vmax)
-    #plot the segemnetation of slice 256 in xz direction for verification
-    xz_slc = frame_index(xz_mask, 'x', idx)
-    x, y = zip(*xz_slc)
-    ax[0].plot(y, x, linewidth=5,alpha = 0.5, color = 'r')
-    ax[0].set_title('slice from the xz direction',size = 20)
+        idx = 256
+        fig = plt.figure(figsize=(16,9))
+        ax1 = fig.add_subplot(221)
+        ax1.imshow(xz_mask[idx,:,:], cmap='gray', vmin =vmin, vmax = vmax)
+        #plot the segemnetation of slice 256 in xz direction for verification
+        xz_slc = frame_index(xz_mask, 'x', idx)
+        x, y = zip(*xz_slc)
+        ax1.plot(y, x, linewidth=5,alpha = 0.5, color = 'r')
+        ax1.set_title('slice from the xz direction',size = 20)
 
-    ax[1].imshow(yz_mask[idx, :, :], cmap='gray', vmin=vmin, vmax=vmax)
-    ax[1].set_title('slice from the yz direction', size = 20)
-    #plot the segemnetation of slice 256 in yz direction for verification
+        ax2 = fig.add_subplot(222)
 
-    yz_slc = frame_index(yz_mask, 'y', idx)
-    x, y = zip(*yz_slc)
-    ax[1].plot(y, x, linewidth=5,alpha = 0.5,color = 'r')
+        ax2.imshow(yz_mask[idx, :, :], cmap='gray', vmin=vmin, vmax=vmax)
+        ax2.set_title('slice from the yz direction', size = 20)
+        #plot the segemnetation of slice 256 in yz direction for verification
+        #
+        yz_slc = frame_index(yz_mask, 'y', idx)
+        x, y = zip(*yz_slc)
+        ax2.plot(y, x, linewidth=5,alpha = 0.5,color = 'r')
 
-    plt.tight_layout()
-    plt.show()
+        ax3 = fig.add_subplot(223, projection='3d')
+        xz.plot(ax3)
 
-    xz.plot() # the xz direction
-    plt.tight_layout()
-    plt.show()
+        ax4 = fig.add_subplot(224, projection='3d')
+        xz.plot(ax4)
 
-    yz.plot()  # the yz direction
-    plt.tight_layout()
-    plt.show()
+        txt_str = 'index %d' % j
+        plt.suptitle(txt_str, fontsize=18)
+
+        plt.tight_layout()
+        plt.show()
+        print('done with extracting points from the xz,yz plane for depth at '
+              'index %d' % j)
+
+
 

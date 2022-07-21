@@ -81,16 +81,26 @@ def filter_mask(slice, vmin, vmax):
 
 class sphere_fit:
     # def __init__(self, pts, dir):
-    def __init__(self, pts):
+    def __init__(self, pts, centre = None, fixed_origin = True):
 
         self.x, self.y, self.z = zip(*pts)
+        self.fixed_origin = fixed_origin
 
-        self.x = np.array(self.x)
-        self.y = np.array(self.y)
-        self.z = 330 - np.array(self.z) # included offset
+        if fixed_origin:
+            self.centre = centre
+            self.x = np.array(self.x) - self.centre[0]
+            self.y = np.array(self.y) - self.centre[1]
+            self.z = np.array(self.z) - self.centre[2]
+
+        else:
+            self.x = np.array(self.x)
+            self.y = np.array(self.y)
+            self.z = np.array(self.z)
+
         self.A = self.form_A()
         self.f = self.form_f()
-        self.r, self.o = self.cal_sphere()
+
+        self.radius, self.origin = self.cal_sphere()
 
     def form_A(self):
         A = np.zeros((len(self.x), 4))
@@ -111,28 +121,38 @@ class sphere_fit:
     def cal_sphere(self):
         c, residules, _, _ = np.linalg.lstsq(self.A, self.f, rcond=None)
         radius = np.sqrt((c[0] * c[0]) + (c[1] * c[1]) + (c[2] * c[2]) + c[3])
-        origin = (c[0], c[1], c[2])
+        if self.fixed_origin:
+            origin = (c[0]+self.centre[0],c[1]+self.centre[1], c[2]+self.centre[2])
+        else:
+            origin = (c[0],c[1], c[2])
+
         return radius, origin
 
     def plot(self, ax):
-        r = self.r
-        x0, y0, z0 = self.o[0], self.o[1], self.o[2]
+        x0, y0, z0 = self.origin[0], self.origin[1], self.origin[2]
 
         u, v = np.mgrid[0:2 * np.pi:20j, 0:np.pi:10j]
-        x = np.cos(u) * np.sin(v) * r
-        y = np.sin(u) * np.sin(v) * r
-        z = np.cos(v) * r
-        x = x + x0
-        y = y + y0
-        z = z + z0
+        x = np.cos(u) * np.sin(v) * self.radius
+        y = np.sin(u) * np.sin(v) * self.radius
+        z = np.cos(v) * self.radius
+        if self.fixed_origin:
+
+            x = x + x0 - self.centre[0]
+            y = y + y0 - self.centre[1]
+            z = z + z0 - self.centre[2]
+        else:
+            x = x + x0
+            y = y + y0
+            z = z + z0
+
         #
         # #   3D plot of Sphere
         # fig = plt.figure(figsize=(8, 6))
         # ax = fig.add_subplot(1, 1, 1, projection='3d')
         ax.scatter(self.x, self.y, self.z, zdir='z', s=0.1, c='b',alpha=0.3, rasterized=True)
         ax.plot_wireframe(x, y, z, color="r",)
-        origin = np.asarray(self.o).flatten()
-        ax.set_title('radius = %.2f \n origin(x,y,z) is %s' % (self.r, origin))
+        origin = np.asarray(self.origin).flatten()
+        ax.set_title('radius = %.2f \n origin(x,y,z) is %s' % (self.radius, origin))
         return ax
 
 

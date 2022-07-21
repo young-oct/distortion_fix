@@ -10,9 +10,6 @@ from scipy.ndimage import gaussian_filter, median_filter
 import numpy as np
 import cv2 as cv
 from scipy.signal import find_peaks
-from matplotlib import rcParams
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 
 
 def clean(data, top=5, radius=230):
@@ -122,9 +119,9 @@ class sphere_fit:
         c, residules, _, _ = np.linalg.lstsq(self.A, self.f, rcond=None)
         radius = np.sqrt((c[0] * c[0]) + (c[1] * c[1]) + (c[2] * c[2]) + c[3])
         if self.fixed_origin:
-            origin = (c[0]+self.centre[0],c[1]+self.centre[1], c[2]+self.centre[2])
+            origin = (c[0]+self.centre[0], c[1]+self.centre[1], c[2]+self.centre[2])
         else:
-            origin = (c[0],c[1], c[2])
+            origin = (c[0], c[1], c[2])
 
         return radius, origin
 
@@ -145,10 +142,6 @@ class sphere_fit:
             y = y + y0
             z = z + z0
 
-        #
-        # #   3D plot of Sphere
-        # fig = plt.figure(figsize=(8, 6))
-        # ax = fig.add_subplot(1, 1, 1, projection='3d')
         ax.scatter(self.x, self.y, self.z, zdir='z', s=0.1, c='b',alpha=0.3, rasterized=True)
         ax.plot_wireframe(x, y, z, color="r",)
         origin = np.asarray(self.origin).flatten()

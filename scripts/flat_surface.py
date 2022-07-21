@@ -16,7 +16,7 @@ if __name__ == '__main__':
     data_sets = natsorted(glob.glob('../data/1mW/flat surface/*.oct'))
 
     data = load_from_oct_file(data_sets[-1])
-    p_factor = 0.725
+    p_factor = 0.75
     vmin, vmax = int(p_factor*255), 255
 
     xz_mask = np.zeros_like(data)
@@ -44,6 +44,8 @@ if __name__ == '__main__':
     yz = sphere_fit(yz_pts,centre = None, fixed_origin = False)
     oc_yz = yz.origin
     # print('done with calculating radius and origin for the yz plane')
+
+    origin_3D = [sum(i)/2 for i in zip(oc_xz, oc_yz)]
 
     idx = 256
     fig = plt.figure(figsize=(16,9))
@@ -73,15 +75,16 @@ if __name__ == '__main__':
 
     plt.suptitle('last dataset', fontsize=18)
 
+    origin_3D = np.asarray(origin_3D).flatten()
+
     plt.tight_layout()
     plt.show()
-    print('done with estimating the origins')
+    print('done with estimating the initial origins %s' % origin_3D)
 
-    for j in range(len(data_sets)-1):
+    for j in range(len(data_sets)):
     # for j in range(2):
-
         data = load_from_oct_file(data_sets[j])
-        p_factor = 0.725
+        p_factor = 0.75
         vmin, vmax = int(p_factor*255), 255
 
         xz_mask = np.zeros_like(data)
@@ -102,10 +105,13 @@ if __name__ == '__main__':
 
         # print('done with extracting points from the yz plane')
 
-        xz = sphere_fit(xz_pts,centre = oc_xz, fixed_origin = True)
+        xz = sphere_fit(xz_pts,centre = origin_3D, fixed_origin = True)
         # print('done with calculating radius and origin for the xz plane')
-        yz = sphere_fit(yz_pts,centre = oc_yz, fixed_origin = True)
+        yz = sphere_fit(yz_pts,centre = origin_3D, fixed_origin = True)
         # print('done with calculating radius and origin for the yz plane')
+
+        origin_3D = [sum(i)/2 for i in zip(xz.origin, yz.origin)]
+        origin_3D = np.asarray(origin_3D).flatten()
 
         idx = 256
         fig = plt.figure(figsize=(16,9))
@@ -138,8 +144,7 @@ if __name__ == '__main__':
 
         plt.tight_layout()
         plt.show()
-        print('done with extracting points from the xz,yz plane for depth at '
-              'index %d' % j)
+        print('%dth plane with origins %s: radius(xz): %.2f, radius(yz):%.2f' % (j,origin_3D,  xz.radius, yz.radius))
 
 
 

@@ -77,7 +77,6 @@ def filter_mask(slice, vmin, vmax):
 
 
 class sphere_fit:
-    # def __init__(self, pts, dir):
     def __init__(self, pts, centre = None, fixed_origin = True):
 
         self.x, self.y, self.z = zip(*pts)
@@ -95,7 +94,7 @@ class sphere_fit:
             self.z = np.array(self.z)
 
         self.A = self.form_A()
-        self.f = self.form_f()
+        self.B = self.form_B()
 
         self.radius, self.origin = self.cal_sphere()
 
@@ -108,11 +107,11 @@ class sphere_fit:
 
         return A
 
-    def form_f(self):
+    def form_B(self):
         #   Assemble the f matrix
-        f = np.zeros((len(self.x), 1))
-        f[:, 0] = (self.x * self.x) + (self.y * self.y) + (self.z * self.z)
-        return f
+        B = np.zeros((len(self.x), 1))
+        B[:, 0] = (self.x * self.x) + (self.y * self.y) + (self.z * self.z)
+        return B
 
     #
     def cal_sphere(self):
@@ -147,6 +146,82 @@ class sphere_fit:
         origin = np.asarray(self.origin).flatten()
         ax.set_title('radius = %.2f \n origin(x,y,z) is %s' % (self.radius, origin))
         return ax
+
+
+class plane_fit:
+
+    def __init__(self, pts, order):
+
+        self.x, self.y, self.z = zip(*pts)
+        self.x = np.array(self.x)
+        self.y = np.array(self.y)
+        self.z = np.array(self.z)
+
+        self.order = order
+
+        self.A = self.form_A()
+        self.B = self.form_B()
+        self.xx, self.yy = np.arange(0, 512, 1),np.arange(0, 512, 1)
+
+        self.x_plane, self.y_plane = np.meshgrid(self.xx, self.yy)
+        self.zc = self.cal_plane()
+
+    def form_A(self):
+        # the  equation for a linear plane is: ax+by+c = z s.t Ax = B
+        # A = [x0, y0, 1,......xn, yn, 1].T
+        if self.order == 1:
+            A = np.c_[self.x, self.y, np.ones(self.x.shape[0])]
+
+        elif self.order == 2:
+            # the  equation for a linear plane is: ax^2+bxy+cy^2+dx+ey+f = z s.t Ax = B
+            # A = [x0^2, x0y0, y0^2, x0, y0, 1,......xn^2, xnyn, yn^2, xn, yn, 1].T
+            A = np.c_[self.x ** 2, self.x * self.y,  self.y ** 2,
+                      self.x, self.y , np.ones(self.x.shape[0])]
+        else:
+            pass
+
+        return A
+
+
+    def form_B(self):
+
+        B = self.z
+
+        return B
+
+    def cal_plane(self):
+
+        c, _, _, _ = np.linalg.lstsq(self.A, self.B, rcond=None)  # coefficients
+
+        # x = [a, b, c].T
+        if self.order == 1:
+            zc = c[0] * self.x_plane + c[1] * self.y_plane + c[2]
+
+        # x = [a, b, c, d, e, f].T
+        elif self.order == 2:
+            zc = c[0]*self.x_plane**2 + \
+                 c[1]*self.x_plane*self.y_plane+\
+                 c[2]*self.y_plane**2 +c[3]*self.x_plane+\
+                 c[4]*self.y_plane+c[5]
+
+        else:
+            pass
+        return zc
+
+
+    def plot(self, ax, low = 0, high = 330):
+
+        ax.scatter(self.x, self.y, self.z, zdir='z', s=0.1, c='b',alpha=0.3, rasterized=True)
+        ax.plot_surface(self.x_plane, self.y_plane, self.zc, color='r',alpha=0.5)
+
+        ax.set_zlabel('z')
+        ax.set_xlabel('x')
+        ax.set_ylabel('y')
+        ax.set_xlim([0, 512])
+        ax.set_ylim([0, 512])
+        ax.set_zlim([low, high])
+        return ax
+
 
 
 def frame_index(volume, dir, index):

@@ -115,7 +115,7 @@ class sphere_fit:
 
     #
     def cal_sphere(self):
-        c, residules, _, _ = np.linalg.lstsq(self.A, self.f, rcond=None)
+        c, residules, _, _ = np.linalg.lstsq(self.A, self.B, rcond=None)
         radius = np.sqrt((c[0] * c[0]) + (c[1] * c[1]) + (c[2] * c[2]) + c[3])
         if self.fixed_origin:
             origin = (c[0]+self.centre[0], c[1]+self.centre[1], c[2]+self.centre[2])

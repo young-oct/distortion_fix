@@ -260,52 +260,47 @@ class plane_fit:
 
 
 def frame_index(volume, dir, index):
+    peak_loc = []
+
     if dir == 'x':
         slice = volume[index,:,:]
+        for i in range(slice.shape[0]):
+            a_line = slice[i, :]
+            peaks = np.where(a_line == 255)
+            if len(peaks[0]) >= 1:
+                peak_loc.append((i, peaks[0][-1]))
+            else:
+                pass
     elif dir == 'y':
         slice = volume[:,index,:]
+        for i in range(slice.shape[0]):
+            a_line = slice[i, :]
+            peaks = np.where(a_line == 255)
+            if len(peaks[0]) >= 1:
+                peak_loc.append((i, peaks[0][-1]))
+            else:
+                pass
     else:
-        print("please enter direction")
-    '''get the index for the peaks in the each slice'''
-    peak_loc = []
-    for i in range(slice.shape[0]):
-        a_line = slice[i, :]
-        peaks, _ = find_peaks(a_line)
-        if len(peaks) != 0:
-
-            peak_loc.append((i, peaks[0]))
-        else:
-            pass
+        print('please enter the correct direction')
     return peak_loc
 
 
-def surface_index(volume, dir):
+
+
+def surface_index(volume):
     '''get the index for the peaks in the each volume'''
 
     peak_loc = []
-    if dir == 'x':
-        for i in range(volume.shape[0]):
-            slice = volume[i, :, :]
-            for j in range(slice.shape[0]):
-                a_line = slice[j, :]
-                peaks, _ = find_peaks(a_line)
-                if len(peaks) != 0:
+    for i in range(volume.shape[0]):
+        slice = volume[i, :, :]
+        for j in range(slice.shape[0]):
+            a_line = slice[j, :]
+            peaks = np.where(a_line == 255)
+            if len(peaks[0]) >= 1:
+                peak_loc.append((i, j, peaks[0][-1]))
+            else:
+                pass
 
-                    peak_loc.append((i, j, peaks[0]))
-                else:
-                    pass
-    elif dir == 'y':
-        for i in range(volume.shape[1]):
-            slice = volume[:, i, :]
-            for j in range(slice.shape[0]):
-                a_line = slice[j, :]
-                peaks, _ = find_peaks(a_line)
-                if len(peaks) != 0:
-                    peak_loc.append((j, i, peaks[0]))
-                else:
-                    pass
-    else:
-        print("please enter direction")
     return peak_loc
 
 def max_slice(volume):

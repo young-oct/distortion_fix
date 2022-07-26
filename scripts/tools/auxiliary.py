@@ -16,7 +16,7 @@ def folder_creator(folder_path):
         # directory already exists
         pass
 
-def load_from_oct_file(oct_file):
+def load_from_oct_file(oct_file, clean = False):
     """
     read .oct file uising OssiviewBufferReader
     export an array in the shape of [512,512,330]
@@ -27,8 +27,11 @@ def load_from_oct_file(oct_file):
 
     data = imag2uint(data_fp16)
 
-    clean_data = clean(data)
-    return clean_data
+    if clean:
+        data = clean(data)
+    else:
+        pass
+    return data
 
 def arrTolist(volume, Yflag=False):
     '''

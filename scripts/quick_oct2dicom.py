@@ -12,7 +12,7 @@ from os.path import join
 
 if __name__ == '__main__':
 
-    data_sets = natsorted(glob.glob('../data/1mW/flat surface(correctd)/*.oct'))
+    data_sets = natsorted(glob.glob('../data/1mW/flat surface/*.oct'))
     data = load_from_oct_file(data_sets[-1])
     #create dicom stacks for comparison
     dicom_path = join('../', 'validation dicom')
@@ -20,11 +20,11 @@ if __name__ == '__main__':
 
     folder_creator(dicom_path)
 
-    file_path = 'corrected'
+    file_path = 'ori'
     f_path = join(dicom_path,file_path)
     folder_creator(f_path)
 
-    patient_info = {'PatientName': 'geo',
+    patient_info = {'PatientName': 'ori',
                     'PatientBirthDate': '19600507',
                     'PatientSex': 'M',
                     'PatientAge': '63Y',

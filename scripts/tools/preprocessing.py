@@ -173,9 +173,18 @@ class plane_fit:
             A = np.c_[self.x, self.y, np.ones(self.x.shape[0])]
 
         elif self.order == 2:
-            # the  equation for a linear plane is: ax^2+bxy+cy^2+dx+ey+f = z s.t Ax = B
+            # the  equation for a quadratic(n=2) plane is: ax^2+bxy+cy^2+dx+ey+f = z s.t Ax = B
             # A = [x0^2, x0y0, y0^2, x0, y0, 1,......xn^2, xnyn, yn^2, xn, yn, 1].T
             A = np.c_[self.x ** 2, self.x * self.y,  self.y ** 2,
+                      self.x, self.y , np.ones(self.x.shape[0])]
+        elif self.order == 3:
+            # the  equation for a cubic(n=3) plane is:
+            # ax^3+ by^3 + cx^2*y + dx*y^2 + ex^2 + fy^2 + gx*y+ hx+iy + j= z s.t Ax = B
+            # A = [x0^3, y0^3, x0^2*y0, + x0*y0^2 + x0^2 + y0^2 +
+            # x0y0 + x0 + y0 + 1, ...... xn ^ 3, yn ^ 3, xn ^ 2 * yn, + xn * yn ^ 2 + xn ^ 2 +
+            # yn ^ 2 + xnyn + xn + yn + 1].T
+            A = np.c_[self.x ** 3, self.y ** 3, (self.x**2) * self.y,self.x * (self.y**2),
+                      self.x ** 2, self.y ** 2, self.x * self.y +
                       self.x, self.y , np.ones(self.x.shape[0])]
         else:
             pass
@@ -204,7 +213,13 @@ class plane_fit:
                  c[2]*self.y_plane**2 +c[3]*self.x_plane+\
                  c[4]*self.y_plane+c[5]
 
-        else:
+        # x = [a, b, c, d, e, f, h, i, j].T
+        elif self.order == 3:
+
+            zc = c[0]*self.x_plane**3 + c[1]*self.y_plane**3 + c[2]*(self.x_plane**2) * self.y_plane + \
+                 c[3] * self.x_plane * (self.y_plane ** 2) + c[4]*self.x_plane**2 + c[5]*self.y_plane**2 + \
+                 c[6]* self.x_plane * self.y_plane + c[7]+self.x_plane+ c[8]*self.y_plane+c[9]
+
             pass
         return zc
 

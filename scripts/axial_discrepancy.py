@@ -9,9 +9,8 @@ from natsort import natsorted
 import numpy as np
 import matplotlib.pyplot as plt
 from tools.auxiliary import load_from_oct_file
-from tools.preprocessing import filter_mask,surface_index,sphere_fit,frame_index,plane_fit
+from tools.preprocessing import filter_mask,surface_index,frame_index,plane_fit
 import pyransac3d as pyrsc
-
 
 def heatmap(data, ax=None,
             cbar_kw={}, cbarlabel="", **kwargs):
@@ -39,8 +38,6 @@ def heatmap(data, ax=None,
     ax.tick_params(which="minor", bottom=False, left=False)
 
     return im, cbar
-
-
 
 if __name__ == '__main__':
 
@@ -111,7 +108,7 @@ if __name__ == '__main__':
     plt.show()
 
     fig = plt.figure(figsize=(16, 9))
-    z_low, z_high = 30, 70
+    # z_low, z_high = 30, 70
     ax = fig.add_subplot(331, projection='3d')
     xp,yp,zp = zip(*yz_pts)
     ax.scatter(xp, yp, zp,s = 0.5, alpha = 0.5, c = 'r')
@@ -122,13 +119,6 @@ if __name__ == '__main__':
     idx_x = np.setdiff1d(np.arange(0,512),pts[:,0])
     idx_y = np.setdiff1d(np.arange(0,512),pts[:,1])
 
-    # raw = np.zeros_like(512,512)
-    # for i in range(512):
-    #     for j in range(512):
-    #         if i in idx_x or j in idx_y:
-    #             pass
-    #         else:
-    #             raw[i,j] = zp
 
     best_eq, best_inliers = ideal_plane.fit(pts, 0.01)
 
@@ -146,6 +136,8 @@ if __name__ == '__main__':
     ax.set_zlabel('z')
     ax.set_xlim([0, 512])
     ax.set_ylim([0, 512])
+    z_mean = np.mean(z_ideal)
+    z_low, z_high = int(z_ideal - 30), int(z_ideal + 30)
     ax.set_zlim([z_low, z_high])
 
     ax = fig.add_subplot(332, projection='3d')

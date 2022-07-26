@@ -15,7 +15,7 @@ if __name__ == '__main__':
 
     data_sets = natsorted(glob.glob('../data/1mW/flat surface/*.oct'))
 
-    data = load_from_oct_file(data_sets[-1])
+    data = load_from_oct_file(data_sets[-1], clean=False)
     p_factor = 0.75
     vmin, vmax = int(p_factor*255), 255
 
@@ -25,7 +25,7 @@ if __name__ == '__main__':
     for i in range(data.shape[0]):
         xz_mask[i,:,:] = filter_mask(data[i,:,:],vmin = vmin, vmax = vmax)
 
-    xz_pts = surface_index(xz_mask, dir = 'x')
+    xz_pts = surface_index(xz_mask)
     # print('done with extracting points from the xz plane')
 
     yz_mask = np.zeros_like(data)
@@ -33,7 +33,7 @@ if __name__ == '__main__':
     for i in range(data.shape[1]):
         yz_mask[:,i,:] = filter_mask(data[:,i,:],vmin = vmin, vmax = vmax)
 
-    yz_pts = surface_index(yz_mask, dir = 'y')
+    yz_pts = surface_index(yz_mask)
 
     # print('done with extracting points from the yz plane')
 
@@ -93,7 +93,7 @@ if __name__ == '__main__':
         for i in range(data.shape[0]):
             xz_mask[i,:,:] = filter_mask(data[i,:,:],vmin = vmin, vmax = vmax)
 
-        xz_pts = surface_index(xz_mask, dir = 'x')
+        xz_pts = surface_index(xz_mask)
         # print('done with extracting points from the xz plane')
 
         yz_mask = np.zeros_like(data)
@@ -101,7 +101,7 @@ if __name__ == '__main__':
         for i in range(data.shape[1]):
             yz_mask[:,i,:] = filter_mask(data[:,i,:],vmin = vmin, vmax = vmax)
 
-        yz_pts = surface_index(yz_mask, dir = 'y')
+        yz_pts = surface_index(yz_mask)
 
         # print('done with extracting points from the yz plane')
 

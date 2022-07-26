@@ -43,138 +43,163 @@ if __name__ == '__main__':
 
     data_sets = natsorted(glob.glob('../data/1mW/flat surface(correctd)/*.oct'))
 
-    data = load_from_oct_file(data_sets[-1])
-    p_factor = 0.75
-    vmin, vmax = int(p_factor*255), 255
+    dis_map = []
+    for j in range(len(data_sets)):
+        data = load_from_oct_file(data_sets[j])
+        p_factor = 0.75
+        vmin, vmax = int(p_factor*255), 255
 
-    xz_mask = np.zeros_like(data)
+        xz_mask = np.zeros_like(data)
 
-    # perform points extraction in the xz direction
-    for i in range(data.shape[0]):
-        xz_mask[i,:,:] = filter_mask(data[i,:,:],vmin = vmin, vmax = vmax)
+        # perform points extraction in the xz direction
+        for i in range(data.shape[0]):
+            xz_mask[i,:,:] = filter_mask(data[i,:,:],vmin = vmin, vmax = vmax)
 
-    xz_pts = surface_index(xz_mask, dir = 'x')
+        xz_pts = surface_index(xz_mask, dir = 'x')
 
-    yz_mask = np.zeros_like(data)
+        yz_mask = np.zeros_like(data)
 
-    for i in range(data.shape[1]):
-        yz_mask[:,i,:] = filter_mask(data[:,i,:],vmin = vmin, vmax = vmax)
+        for i in range(data.shape[1]):
+            yz_mask[:,i,:] = filter_mask(data[:,i,:],vmin = vmin, vmax = vmax)
 
-    yz_pts = surface_index(yz_mask, dir = 'y')
+        yz_pts = surface_index(yz_mask, dir = 'y')
 
-    fig = plt.figure(figsize=(16, 9))
+        fig = plt.figure(figsize=(16, 9))
 
-    idx = 256
-    ax = fig.add_subplot(221)
-    ax.imshow(xz_mask[idx,:,:], cmap='gray', vmin =vmin, vmax = vmax)
+        idx = 256
+        ax = fig.add_subplot(221)
+        ax.imshow(xz_mask[idx,:,:], cmap='gray', vmin =vmin, vmax = vmax)
 
-    xz_slc = frame_index(xz_mask, 'x', idx)
-    x, y = zip(*xz_slc)
-    ax.plot(y, x, linewidth=5,alpha = 0.5, color = 'r')
-    ax.set_title('slice %d from the xz direction'% idx,size = 16)
+        xz_slc = frame_index(xz_mask, 'x', idx)
+        x, y = zip(*xz_slc)
+        ax.plot(y, x, linewidth=5,alpha = 0.5, color = 'r')
+        ax.set_title('slice %d from the xz direction'% idx,size = 16)
 
-    ax = fig.add_subplot(222)
+        ax = fig.add_subplot(222)
 
-    ax.imshow(yz_mask[idx, :, :], cmap='gray', vmin=vmin, vmax=vmax)
-    yz_slc = frame_index(yz_mask, 'y', idx)
-    x, y = zip(*yz_slc)
-    ax.plot(y, x, linewidth=5,alpha = 0.5,color = 'r')
-    ax.set_title('slice %d from the yz direction'% idx,size = 16)
-    #plot the segemnetation of slice 256 in yz direction for verification
+        ax.imshow(yz_mask[idx, :, :], cmap='gray', vmin=vmin, vmax=vmax)
+        yz_slc = frame_index(yz_mask, 'y', idx)
+        x, y = zip(*yz_slc)
+        ax.plot(y, x, linewidth=5,alpha = 0.5,color = 'r')
+        ax.set_title('slice %d from the yz direction'% idx,size = 16)
+        #plot the segemnetation of slice 256 in yz direction for verification
 
-    ax = fig.add_subplot(223, projection='3d')
-    xp,yp,zp = zip(*xz_pts)
-    ax.scatter(xp, yp, zp,s = 0.5, alpha = 0.1)
-    ax.set_title('raw points cloud in xz direction',size = 20)
-    ax.set_xlabel('x')
-    ax.set_ylabel('y')
-    ax.set_zlabel('z')
-    ax.set_xlim([0,  data.shape[0]])
-    ax.set_ylim([0,  data.shape[1]])
-    ax.set_zlim([0, data.shape[2]])
+        ax = fig.add_subplot(223, projection='3d')
+        xp,yp,zp = zip(*xz_pts)
+        ax.scatter(xp, yp, zp,s = 0.5, alpha = 0.1)
+        ax.set_title('raw points cloud in xz direction',size = 15)
+        ax.set_xlabel('x')
+        ax.set_ylabel('y')
+        ax.set_zlabel('z')
+        ax.set_xlim([0,  data.shape[0]])
+        ax.set_ylim([0,  data.shape[1]])
+        ax.set_zlim([0, data.shape[2]])
 
-    ax = fig.add_subplot(224, projection='3d')
-    xp,yp,zp = zip(*yz_pts)
-    ax.scatter(xp, yp, zp,s = 0.5, alpha = 0.1, c = 'r')
-    ax.set_title('raw points cloud in yz direction',size = 15)
-    ax.set_xlabel('x')
-    ax.set_ylabel('y')
-    ax.set_zlabel('z')
-    ax.set_xlim([0,  data.shape[0]])
-    ax.set_ylim([0,  data.shape[1]])
-    ax.set_zlim([0, data.shape[2]])
+        ax = fig.add_subplot(224, projection='3d')
+        xp,yp,zp = zip(*yz_pts)
 
-    plt.tight_layout()
-    plt.show()
+        ideal_plane = pyrsc.Plane()
+        pts = np.asarray(yz_pts)
 
-    fig = plt.figure(figsize=(16, 9))
-    # z_low, z_high = 30, 70
-    ax = fig.add_subplot(331, projection='3d')
-    xp,yp,zp = zip(*yz_pts)
-    ax.scatter(xp, yp, zp,s = 0.5, alpha = 0.5, c = 'r')
+        ax.scatter(xp, yp, zp,s = 0.5, alpha = 0.1, c = 'r')
+        ax.set_title('raw points cloud in yz direction',size = 15)
+        ax.set_xlabel('x')
+        ax.set_ylabel('y')
+        ax.set_zlabel('z')
+        ax.set_xlim([0,  data.shape[0]])
+        ax.set_ylim([0,  data.shape[1]])
+        ax.set_zlim([0, data.shape[2]])
 
-    ideal_plane = pyrsc.Plane()
-    pts = np.asarray(yz_pts)
+        best_eq, best_inliers = ideal_plane.fit(pts, 0.01)
 
-    idx_x = np.setdiff1d(np.arange(0,512),pts[:,0])
-    idx_y = np.setdiff1d(np.arange(0,512),pts[:,1])
+        a, b, c, d = best_eq[0], best_eq[1], -best_eq[2], best_eq[3]
 
+        xx, yy = np.meshgrid(np.arange(0, data.shape[1], 1), np.arange(0, data.shape[1], 1))
+        z_ideal = (d - a * xx - b * yy) / c
+        z_mean = np.mean(z_ideal)
 
-    best_eq, best_inliers = ideal_plane.fit(pts, 0.01)
+        fig.suptitle('index at %d plane' % z_mean, fontsize=15)
 
-    a, b, c, d = best_eq[0], best_eq[1], -best_eq[2], best_eq[3]
+        plt.tight_layout()
+        plt.show()
 
-    xx, yy = np.meshgrid(np.arange(0, 512, 1), np.arange(0, 512, 1))
-    z_ideal = (d - a * xx - b * yy) / c
+        fig = plt.figure(figsize=(16, 9))
 
-    surf = ax.plot_wireframe(xx, yy, z_ideal,alpha = 0.2)
+        ax = fig.add_subplot(3, 4, 1, projection='3d')
+        xp,yp,zp = zip(*yz_pts)
+        ax.scatter(xp, yp, zp,s = 0.5, alpha = 0.5, c = 'r')
 
-    ax.set_title('raw points cloud in yz direction \n'
-                 '& ideal plane',size = 20)
-    ax.set_xlabel('x')
-    ax.set_ylabel('y')
-    ax.set_zlabel('z')
-    ax.set_xlim([0, 512])
-    ax.set_ylim([0, 512])
-    z_mean = np.mean(z_ideal)
-    z_low, z_high = int(z_ideal - 30), int(z_ideal + 30)
-    ax.set_zlim([z_low, z_high])
+        idx_x = np.setdiff1d(np.arange(0,data.shape[1]),pts[:,0])
+        idx_y = np.setdiff1d(np.arange(0,data.shape[2]),pts[:,1])
 
-    ax = fig.add_subplot(332, projection='3d')
-    ax.set_title('raw points cloud in yz direction \n'
-                 '& linearly fitted plane',size = 15)
+        surf = ax.plot_wireframe(xx, yy, z_ideal,alpha = 0.2)
 
-    l_plane = plane_fit(yz_pts,order=1).zc
-    ax.scatter(xp, yp, zp,s = 0.5, alpha = 0.5, c = 'r')
+        ax.set_title('raw points cloud in yz direction \n'
+                     '& ideal plane',size = 15)
+        ax.set_xlabel('x')
+        ax.set_ylabel('y')
+        ax.set_zlabel('z')
+        ax.set_xlim([0, data.shape[0]])
+        ax.set_ylim([0, data.shape[1]])
+        z_low, z_high = int(z_mean - 30), int(z_mean + 30)
+        ax.set_zlim([z_low, z_high])
 
-    plane_fit(yz_pts,order=1).plot(ax,z_low,z_high)
+        ax = fig.add_subplot(3, 4, 2, projection='3d')
+        ax.set_title('raw points cloud in yz direction \n'
+                     '& linearly fitted plane',size = 15)
 
-    ax = fig.add_subplot(335, projection='3d')
-    dl_map = l_plane - z_ideal
-    surf = ax.plot_wireframe(xx, yy, dl_map,alpha = 0.2)
+        l_plane = plane_fit(yz_pts,order=1).zc
+        ax.scatter(xp, yp, zp,s = 0.5, alpha = 0.5, c = 'r')
 
-    ax = fig.add_subplot(338)
-    im, cbar = heatmap(dl_map, ax=ax,
-                       cmap="hot", cbarlabel='depth variation')
+        plane_fit(yz_pts,order=1).plot(ax,z_low,z_high)
 
-    ax = fig.add_subplot(333, projection='3d')
-    ax.set_title('raw points cloud in yz direction \n'
-                 '& quadratically fitted plane',size = 15)
+        ax = fig.add_subplot(3, 4, 6, projection='3d')
+        dl_map = l_plane - z_ideal
+        surf = ax.plot_wireframe(xx, yy, dl_map,alpha = 0.2)
 
-    q_plane = plane_fit(yz_pts,order=2).zc
-    ax.scatter(xp, yp, zp,s = 0.5, alpha = 0.5, c = 'r')
-    plane_fit(yz_pts,order=2).plot(ax,z_low,z_high)
+        ax = fig.add_subplot(3, 4, 10)
+        im, cbar = heatmap(dl_map, ax=ax,
+                           cmap="hot", cbarlabel='depth variation')
 
-    ax = fig.add_subplot(336, projection='3d')
-    dq_map = q_plane - z_ideal
-    surf = ax.plot_wireframe(xx, yy, dq_map,alpha = 0.2)
+        ax = fig.add_subplot(3, 4, 3, projection='3d')
+        ax.set_title('raw points cloud in yz direction \n'
+                     '& quadratically fitted plane',size = 15)
 
-    ax = fig.add_subplot(339)
-    im, cbar = heatmap(dq_map, ax=ax,
-                       cmap="hot", cbarlabel='depth variation')
+        q_plane = plane_fit(yz_pts,order=2).zc
+        ax.scatter(xp, yp, zp,s = 0.5, alpha = 0.5, c = 'r')
+        plane_fit(yz_pts,order=2).plot(ax,z_low,z_high)
 
-    plt.tight_layout()
-    plt.show()
+        ax = fig.add_subplot(3, 4, 7, projection='3d')
+        dq_map = q_plane - z_ideal
+        surf = ax.plot_wireframe(xx, yy, dq_map,alpha = 0.2)
 
-    print('the standard deviation obtained from the linear plane is %.2f' % np.std(dl_map))
-    print('the standard deviation obtained from the quadratic plane is %.2f' % np.std(dq_map))
+        ax = fig.add_subplot(3, 4, 11)
+        im, cbar = heatmap(dq_map, ax=ax,
+                           cmap="hot", cbarlabel='depth variation')
+
+        ax = fig.add_subplot(3, 4, 4, projection='3d')
+        ax.set_title('raw points cloud in yz direction \n'
+                     '& cubically fitted plane',size = 15)
+
+        c_plane = plane_fit(yz_pts,order=3).zc
+        ax.scatter(xp, yp, zp,s = 0.5, alpha = 0.5, c = 'r')
+        plane_fit(yz_pts,order=3).plot(ax,z_low,z_high)
+
+        ax = fig.add_subplot(3, 4, 8, projection='3d')
+        dc_map = c_plane - z_ideal
+        surf = ax.plot_wireframe(xx, yy, dc_map,alpha = 0.2)
+
+        ax = fig.add_subplot(3, 4, 12)
+        im, cbar = heatmap(dc_map, ax=ax,
+                           cmap="hot", cbarlabel='depth variation')
+
+        fig.suptitle('index at %d plane' % z_mean, fontsize=15)
+        plt.tight_layout()
+        plt.show()
+
+        # you can export between linear, quadratic, cubic interpretation map
+        dis_map.append((z_mean,dc_map))
+        print('index at %d plane with linear plane has std %.2f' % (z_mean, np.std(dl_map)))
+        print('index at %d plane with quadratic plane has std %.2f' % (z_mean, np.std(dq_map)))
+        print('index at %d plane with cubic plane has std %.2f' % (z_mean,np.std(dc_map)))
+        print('done with %d out of %d' % (j, len(data_sets)))

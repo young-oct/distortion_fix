@@ -103,13 +103,22 @@ if __name__ == '__main__':
         c_no = i % 3  # row number of the plot
 
         ax[r_no, c_no].imshow(slx[i][-1], 'gray')
-        ax[r_no, c_no].plot(coords[:, 1], coords[:, 0], color='cyan', marker='o',
-                linestyle='None', markersize=3)
         ax[r_no, c_no].set_axis_off()
         ax[r_no, c_no].set_title('slice axial index: %d' % slx[i][0])
 
+        # remove some out of bounds points
+        for j in range(coords.shape[0]):
+            x, y = coords[j, 1], coords[j, 0]
+            r = np.sqrt((x-256)**2 + (y-256) **2)
+            if r <= 230:
+
+                ax[r_no, c_no].plot(x, y, color='cyan', marker='o',
+                    linestyle='None', markersize=3)
+
         #save checkboard coordinates list in to x,y,z
-        cor_list.append((coords[:, 1],coords[:, 0],slx[i][0]))
+        # cor_list.append((coords[:, 1],coords[:, 0],slx[i][0]))
+            else:
+                pass
     plt.tight_layout()
     plt.show()
 

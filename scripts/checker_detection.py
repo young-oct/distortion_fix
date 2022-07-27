@@ -97,64 +97,89 @@ if __name__ == '__main__':
     plt.tight_layout()
     plt.show()
 
-    img = check_board[0][1]
+    img = check_board[0][-1]
     from skimage.morphology import disk, dilation,square,erosion,binary_erosion,binary_dilation,\
         binary_closing,binary_opening
     # img = dilation(img, disk(3))
+    # img = median_filter(img, size=10)
 
     binary_map = prep.binarization(img, thres=vmin)
     img = closing(binary_map,disk(3))
+    slice = gaussian_filter(slice, sigma=2)
+    slice = median_filter(slice, size=5)
+    # img = gaussian_filter(img, sigma=0.5)
 
-    plt.imshow(img)
-    plt.show()
+    #
+    # plt.imshow(img)
+    # plt.show()
 
     mat1 = lprep.convert_chessboard_to_linepattern(img)
     plt.imshow(mat1)
     plt.show()
 
     # Calculate slope and distance between lines
-    slope_hor, dist_hor = lprep.calc_slope_distance_hor_lines(mat1, radius=5, sensitive=0.1)
-    slope_ver, dist_ver = lprep.calc_slope_distance_ver_lines(mat1, radius=5, sensitive=0.1)
+    radius,ratio = 15, 0.5
+    slope_hor, dist_hor = lprep.calc_slope_distance_hor_lines(mat1, radius=radius, sensitive=0.25)
+    slope_ver, dist_ver = lprep.calc_slope_distance_ver_lines(mat1, radius=radius, sensitive=0.25)
     print("Horizontal slope: ", slope_hor, " Distance: ", dist_hor)
     print("Vertical slope: ", slope_ver, " Distance: ", dist_ver)
 
+    # list_points_hor_lines = lprep.get_cross_points_hor_lines(mat1, slope_ver, dist_ver,
+    #                                                          ratio=0.3, norm=True, offset=0,
+    #                                                          bgr="bright", radius=15,
+    #                                                          sensitive=1.0, denoise=True,
+    #                                                          subpixel=True)
+
     list_points_hor_lines = lprep.get_cross_points_hor_lines(mat1, slope_ver, dist_ver,
-                                                             ratio=0.3, norm=True, offset=450,
-                                                             bgr="bright", radius=5,
-                                                             sensitive=1.0, denoise=True,
+                                                             ratio=ratio, norm=True, offset=100,
+                                                             bgr="bright", radius=radius,
+                                                             sensitive=1.5, denoise=True,
                                                              subpixel=True)
+
     list_points_ver_lines = lprep.get_cross_points_ver_lines(mat1, slope_hor, dist_hor,
-                                                             ratio=0.3, norm=True, offset=150,
-                                                             bgr="bright", radius=5,
-                                                             sensitive=1.0, denoise=True,
+                                                             ratio=ratio, norm=True, offset=100,
+                                                             bgr="bright", radius=radius,
+                                                             sensitive=1.5, denoise=True,
+                                                             subpixel=True)
 
-                                                          subpixel=True)
+    # Group points into lines
+    list_hor_lines = prep.group_dots_hor_lines(list_points_hor_lines, slope_hor, dist_hor,
+                                               ratio=0.5, num_dot_miss=3, accepted_ratio=0.8)
+    list_ver_lines = prep.group_dots_ver_lines(list_points_ver_lines, slope_ver, dist_ver,
+                                               ratio=0.5, num_dot_miss=3, accepted_ratio=0.8)
 
-    # x,y = zip(*list_points_hor_lines)
-    # plt.(x,y)
-    # plt.show()
-    # cor_list = []
-    # fig, ax = plt.subplots(3, 3, figsize=(16, 9))
-    # for i in range(len(slx)):
-    #
-    #     # you can play around with those paramaters
-    #     # k =[0,0.2] 0 gives your the sharp corners, 0.2 gives you blunt ones
-    #     # sigma is for gaussian filters
-    #     # min_distance is for the size of square
-    #     coords = corner_peaks(corner_harris(slx[i][-1], k=0.15, sigma=5.5), min_distance=15, threshold_rel=0.015)
-    #
-    #     r_no = i // 3  # get row number of the plot from reminder of division
-    #     c_no = i % 3  # row number of the plot
-    #
-    #     ax[r_no, c_no].imshow(slx[i][-1], 'gray')
-    #     ax[r_no, c_no].plot(coords[:, 1], coords[:, 0], color='cyan', marker='o',
-    #             linestyle='None', markersize=3)
-    #     ax[r_no, c_no].set_axis_off()
-    #     ax[r_no, c_no].set_title('slice axial index: %d' % slx[i][0])
-    #
-    #     #save checkboard coordinates list in to x,y,z
-    #     cor_list.append((coords[:, 1],coords[:, 0],slx[i][0]))
-    # plt.tight_layout()
-    # plt.show()
-    #
-    #
+    # Remove residual dots
+    list_hor_lines = prep.remove_residual_dots_hor(list_hor_lines, slope_hor, 10)
+    list_ver_lines = prep.remove_residual_dots_ver(list_ver_lines, slope_ver, 10)
+
+    height = 512
+    fig, ax = plt.subplots(1,2 ,figsize = (16,9))
+
+    for point_ver in list_points_ver_lines:
+        ax[0].plot(point_ver[1], point_ver[0], '.', color='r',
+                 markersize=10)
+    for point_hor in list_points_hor_lines:
+        ax[0].plot(point_hor[1], point_hor[0], '.', color='k',
+                 markersize=10)
+
+    ax[0].imshow(mat1)
+
+    ax[0].set_xlim([0, 512])
+    ax[0].set_ylim([0, 512])
+
+
+    for point_ver in list_points_ver_lines:
+        ax[1].plot(point_ver[1], point_ver[0], '.', color='r',
+                 markersize=10)
+    for point_hor in list_points_hor_lines:
+        ax[1].plot(point_hor[1], point_hor[0], '.', color='k',
+                   markersize=10)
+
+    ax[1].imshow(img)
+
+    ax[1].set_xlim([0, 512])
+    ax[1].set_ylim([0, 512])
+
+    plt.show()
+
+    print('done')

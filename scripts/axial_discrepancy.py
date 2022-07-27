@@ -12,7 +12,6 @@ from tools.auxiliary import load_from_oct_file
 from tools.preprocessing import filter_mask, surface_index, frame_index, plane_fit
 import pyransac3d as pyrsc
 
-
 def heatmap(data, ax=None,
             cbar_kw={}, cbarlabel="", **kwargs):
     if not ax:
@@ -43,12 +42,13 @@ def heatmap(data, ax=None,
 if __name__ == '__main__':
 
     data_sets = natsorted(glob.glob('../data/1mW/flat surface(correctd)/*.oct'))
+    p_factor = np.linspace(0.75, 0.8, len(data_sets))
+    shift = 3
 
     dis_map = []
     for j in range(len(data_sets)):
         data = load_from_oct_file(data_sets[j], clean=False)
-        p_factor = 0.75
-        vmin, vmax = int(p_factor * 255), 255
+        vmin, vmax = int(p_factor[j] * 255), 255
 
         xz_mask = np.zeros_like(data)
 
@@ -56,14 +56,14 @@ if __name__ == '__main__':
         for i in range(data.shape[0]):
             xz_mask[i, :, :] = filter_mask(data[i, :, :], vmin=vmin, vmax=vmax)
 
-        xz_pts = surface_index(xz_mask)
+        xz_pts = surface_index(xz_mask,shift)
 
         fig = plt.figure(figsize=(16, 9))
         idx = 256
         ax = fig.add_subplot(121)
         ax.imshow(xz_mask[idx, :, :], cmap='gray', vmin=vmin, vmax=vmax)
 
-        xz_slc = frame_index(xz_mask, 'x', idx)
+        xz_slc = frame_index(xz_mask, 'x', idx, shift)
         x, y = zip(*xz_slc)
         ax.plot(y, x, linewidth=5, alpha=0.8, color='r')
         ax.set_title('slice %d from the xz direction' % idx, size=15)
@@ -85,7 +85,7 @@ if __name__ == '__main__':
 
         best_eq, best_inliers = ideal_plane.fit(pts, 0.01)
 
-        a, b, c, d = best_eq[0], best_eq[1], -best_eq[2], best_eq[3]
+        a, b, c, d = best_eq[0], best_eq[1], - best_eq[2], best_eq[3]
 
         xx, yy = np.meshgrid(np.arange(0, data.shape[1], 1), np.arange(0, data.shape[1], 1))
         z_ideal = (d - a * xx - b * yy) / c

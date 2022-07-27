@@ -259,7 +259,7 @@ class plane_fit:
         return ax
 
 
-def frame_index(volume, dir, index):
+def frame_index(volume, dir, index,shift = 0):
     peak_loc = []
 
     if dir == 'x':
@@ -268,7 +268,7 @@ def frame_index(volume, dir, index):
             a_line = slice[i, :]
             peaks = np.where(a_line == 255)
             if len(peaks[0]) >= 1:
-                peak_loc.append((i, peaks[0][-1]))
+                peak_loc.append((i, int(peaks[0][-1] -shift)))
             else:
                 pass
     elif dir == 'y':
@@ -277,7 +277,7 @@ def frame_index(volume, dir, index):
             a_line = slice[i, :]
             peaks = np.where(a_line == 255)
             if len(peaks[0]) >= 1:
-                peak_loc.append((i, peaks[0][-1]))
+                peak_loc.append((i, int(peaks[0][-1] - shift)))
             else:
                 pass
     else:
@@ -287,7 +287,7 @@ def frame_index(volume, dir, index):
 
 
 
-def surface_index(volume):
+def surface_index(volume, shift = 0):
     '''get the index for the peaks in the each volume'''
 
     peak_loc = []
@@ -297,7 +297,7 @@ def surface_index(volume):
             a_line = slice[j, :]
             peaks = np.where(a_line == 255)
             if len(peaks[0]) >= 1:
-                peak_loc.append((i, j, peaks[0][-1]))
+                peak_loc.append((i, j, int(peaks[0][-1] - shift)))
             else:
                 pass
 

@@ -114,9 +114,8 @@ if __name__ == '__main__':
 
                 ax[r_no, c_no].plot(x, y, color='cyan', marker='o',
                     linestyle='None', markersize=3)
-
-        #save checkboard coordinates list in to x,y,z
-        # cor_list.append((coords[:, 1],coords[:, 0],slx[i][0]))
+                #save checkboard coordinates list in to x,y,z
+                cor_list.append((coords[j, 1],coords[j, 0],slx[i][0]))
             else:
                 pass
     plt.tight_layout()

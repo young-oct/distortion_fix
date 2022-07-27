@@ -12,7 +12,7 @@ import cv2 as cv
 from scipy.signal import find_peaks
 
 
-def clean(data, top=5, radius=230):
+def clean_removal(data, top=5, radius=230):
     '''
 
     :param data: oct 3d data 512x512x330

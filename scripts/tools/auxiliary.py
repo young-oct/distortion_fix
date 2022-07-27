@@ -5,7 +5,7 @@
 # @Software: PyCharm
 import os
 
-from scripts.tools.preprocessing import clean,imag2uint,despecking
+from scripts.tools.preprocessing import clean_removal,imag2uint,despecking
 import numpy as np
 from scripts.tools.OssiviewBufferReader import OssiviewBufferReader
 
@@ -28,7 +28,7 @@ def load_from_oct_file(oct_file, clean = False):
     data = imag2uint(data_fp16)
 
     if clean:
-        data = clean(data)
+        data = clean_removal(data)
     else:
         pass
     return data

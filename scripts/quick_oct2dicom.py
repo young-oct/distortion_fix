@@ -15,7 +15,7 @@ if __name__ == '__main__':
     data_sets = natsorted(glob.glob('../data/1mW/flat surface/*.oct'))
     data = load_from_oct_file(data_sets[-1])
     #create dicom stacks for comparison
-    dicom_path = join('../', 'validation dicom')
+    dicom_path = join('../', 'data','validation dicom')
     resolutionx, resolutiony, resolutionz = 0.026, 0.026, 0.030
 
     folder_creator(dicom_path)

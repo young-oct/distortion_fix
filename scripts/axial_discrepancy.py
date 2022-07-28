@@ -42,6 +42,7 @@ def heatmap(data, ax=None,
 
 def export_map(map_arr, file_path):
     # export correction map
+    map_arr /= 512
     map_arr = map_arr.astype(np.float32)
     map_arr_size = np.uint32(map_arr.size)
 
@@ -61,7 +62,7 @@ if __name__ == '__main__':
 
     dis_map = []
     raw_dis_map = []
-    # for j in range(1):
+    # for j in range(2):
     for j in range(len(data_sets)):
         data = load_from_oct_file(data_sets[j], clean=False)
         vmin, vmax = int(p_factor[j] * 255), 255
@@ -117,9 +118,7 @@ if __name__ == '__main__':
                 pass
 
         raw_map = gaussian_filter(raw_map, sigma=4)
-        file_path = (os.path.join(folder_path, '%d.bin' % z_mean))
 
-        export_map(raw_map, file_path)
 
         fig.suptitle('index at %d plane' % z_mean, fontsize=15)
 
@@ -213,32 +212,38 @@ if __name__ == '__main__':
         # export the raw point difference map
         raw_dis_map.append((z_mean, raw_map))
 
+        temp_name = data_sets[j].split('/')[-1]
+        file_name = temp_name.split('.')[0]
+        file_path = (os.path.join(folder_path, '%s.bin' % file_name))
+
+        export_map(raw_map, file_path)
+
         print('index at %d plane with linear plane has std %.2f' % (z_mean, np.std(dl_map)))
         print('index at %d plane with quadratic plane has std %.2f' % (z_mean, np.std(dq_map)))
         print('index at %d plane with cubic plane has std %.2f' % (z_mean, np.std(dc_map)))
         print('done with %d out of %d' % (int(j + 1), len(data_sets)))
 
-        # export the orientation map
-        orientation = np.ones((512, 512))
-        for i in range(orientation.shape[0]):
-            for j in range(orientation.shape[1]):
-                if 0 <= i <= 256 and 0 <= j <= 256:
-                    orientation[i, j] = 0
-                else:
-                    pass
+    # export the orientation map
+    orientation = np.ones((512, 512))
+    for i in range(orientation.shape[0]):
+        for j in range(orientation.shape[1]):
+            if 0 <= i <= 256 and 0 <= j <= 256:
+                orientation[i, j] = 0
+            else:
+                pass
 
-        fig = plt.figure(figsize=(16, 9))
-        ax = fig.add_subplot(1, 2, 1, projection='3d')
-        ax.set_xlabel('x')
-        ax.set_ylabel('y')
-        ax.set_zlabel('z')
-        surf = ax.plot_wireframe(xx, yy, orientation, alpha=0.2)
-        ax = fig.add_subplot(1, 2, 2)
-        im, cbar = heatmap(orientation, ax=ax,
-                           cmap="hot", cbarlabel='depth variation')
-        fig.suptitle('orientation map', fontsize=15)
-        plt.tight_layout()
-        plt.show()
+    fig = plt.figure(figsize=(16, 9))
+    ax = fig.add_subplot(1, 2, 1, projection='3d')
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
+    ax.set_zlabel('z')
+    surf = ax.plot_wireframe(xx, yy, orientation, alpha=0.2)
+    ax = fig.add_subplot(1, 2, 2)
+    im, cbar = heatmap(orientation, ax=ax,
+                       cmap="hot", cbarlabel='depth variation')
+    fig.suptitle('orientation map', fontsize=15)
+    plt.tight_layout()
+    plt.show()
 
         # # fig, ax = plt.subplots(1, 4, figsize=(16, 9))
         # fig = plt.figure(figsize=(16, 9))

@@ -12,6 +12,7 @@ from tools.auxiliary import load_from_oct_file
 from tools.preprocessing import filter_mask, surface_index, frame_index, plane_fit
 import pyransac3d as pyrsc
 
+
 def heatmap(data, ax=None,
             cbar_kw={}, cbarlabel="", **kwargs):
     if not ax:
@@ -46,6 +47,7 @@ if __name__ == '__main__':
     shift = 3
 
     dis_map = []
+    raw_dis_map = []
     for j in range(len(data_sets)):
         data = load_from_oct_file(data_sets[j], clean=False)
         vmin, vmax = int(p_factor[j] * 255), 255
@@ -56,7 +58,7 @@ if __name__ == '__main__':
         for i in range(data.shape[0]):
             xz_mask[i, :, :] = filter_mask(data[i, :, :], vmin=vmin, vmax=vmax)
 
-        xz_pts = surface_index(xz_mask,shift)
+        xz_pts = surface_index(xz_mask, shift)
 
         fig = plt.figure(figsize=(16, 9))
         idx = 256
@@ -99,16 +101,16 @@ if __name__ == '__main__':
         fig = plt.figure(figsize=(16, 9))
 
         ax = fig.add_subplot(3, 4, 1, projection='3d')
-        xp,yp,zp = zip(*xz_pts)
-        ax.scatter(xp, yp, zp,s = 0.5, alpha = 0.5, c = 'r')
+        xp, yp, zp = zip(*xz_pts)
+        ax.scatter(xp, yp, zp, s=0.5, alpha=0.5, c='r')
 
-        idx_x = np.setdiff1d(np.arange(0,data.shape[1]),pts[:,0])
-        idx_y = np.setdiff1d(np.arange(0,data.shape[2]),pts[:,1])
+        idx_x = np.setdiff1d(np.arange(0, data.shape[1]), pts[:, 0])
+        idx_y = np.setdiff1d(np.arange(0, data.shape[2]), pts[:, 1])
 
-        surf = ax.plot_wireframe(xx, yy, z_ideal,alpha = 0.2)
+        surf = ax.plot_wireframe(xx, yy, z_ideal, alpha=0.2)
 
         ax.set_title('raw points cloud \n'
-                     '& ideal plane',size = 15)
+                     '& ideal plane', size=15)
         ax.set_xlabel('x')
         ax.set_ylabel('y')
         ax.set_zlabel('z')
@@ -119,16 +121,16 @@ if __name__ == '__main__':
 
         ax = fig.add_subplot(3, 4, 2, projection='3d')
         ax.set_title('raw points cloud \n'
-                     '& linearly fitted plane',size = 15)
+                     '& linearly fitted plane', size=15)
 
-        l_plane = plane_fit(xz_pts,order=1).zc
-        ax.scatter(xp, yp, zp,s = 0.5, alpha = 0.5, c = 'r')
+        l_plane = plane_fit(xz_pts, order=1).zc
+        ax.scatter(xp, yp, zp, s=0.5, alpha=0.5, c='r')
 
-        plane_fit(xz_pts,order=1).plot(ax,z_low,z_high)
+        plane_fit(xz_pts, order=1).plot(ax, z_low, z_high)
 
         ax = fig.add_subplot(3, 4, 6, projection='3d')
         dl_map = l_plane - z_ideal
-        surf = ax.plot_wireframe(xx, yy, dl_map,alpha = 0.2)
+        surf = ax.plot_wireframe(xx, yy, dl_map, alpha=0.2)
 
         ax = fig.add_subplot(3, 4, 10)
         im, cbar = heatmap(dl_map, ax=ax,
@@ -136,15 +138,15 @@ if __name__ == '__main__':
 
         ax = fig.add_subplot(3, 4, 3, projection='3d')
         ax.set_title('raw points cloud \n'
-                     '& quadratically fitted plane',size = 15)
+                     '& quadratically fitted plane', size=15)
 
-        q_plane = plane_fit(xz_pts,order=2).zc
-        ax.scatter(xp, yp, zp,s = 0.5, alpha = 0.5, c = 'r')
-        plane_fit(xz_pts,order=2).plot(ax,z_low,z_high)
+        q_plane = plane_fit(xz_pts, order=2).zc
+        ax.scatter(xp, yp, zp, s=0.5, alpha=0.5, c='r')
+        plane_fit(xz_pts, order=2).plot(ax, z_low, z_high)
 
         ax = fig.add_subplot(3, 4, 7, projection='3d')
         dq_map = q_plane - z_ideal
-        surf = ax.plot_wireframe(xx, yy, dq_map,alpha = 0.2)
+        surf = ax.plot_wireframe(xx, yy, dq_map, alpha=0.2)
 
         ax = fig.add_subplot(3, 4, 11)
         im, cbar = heatmap(dq_map, ax=ax,
@@ -152,15 +154,15 @@ if __name__ == '__main__':
 
         ax = fig.add_subplot(3, 4, 4, projection='3d')
         ax.set_title('raw points cloud \n'
-                     '& cubically fitted plane',size = 15)
+                     '& cubically fitted plane', size=15)
 
-        c_plane = plane_fit(xz_pts,order=3).zc
-        ax.scatter(xp, yp, zp,s = 0.5, alpha = 0.5, c = 'r')
-        plane_fit(xz_pts,order=3).plot(ax,z_low,z_high)
+        c_plane = plane_fit(xz_pts, order=3).zc
+        ax.scatter(xp, yp, zp, s=0.5, alpha=0.5, c='r')
+        plane_fit(xz_pts, order=3).plot(ax, z_low, z_high)
 
         ax = fig.add_subplot(3, 4, 8, projection='3d')
         dc_map = c_plane - z_ideal
-        surf = ax.plot_wireframe(xx, yy, dc_map,alpha = 0.2)
+        surf = ax.plot_wireframe(xx, yy, dc_map, alpha=0.2)
 
         ax = fig.add_subplot(3, 4, 12)
         im, cbar = heatmap(dc_map, ax=ax,
@@ -170,9 +172,28 @@ if __name__ == '__main__':
         plt.tight_layout()
         plt.show()
 
+        raw_map = np.zeros((512, 512))
+        for i in range(len(a)):
+            lb, hb = z_mean * 0.5, z_mean * 1.5
+            if lb <= a[i][0] <= hb:
+                raw_map[a[i][0], a[i][1]] = int(raw_map[i][2] - z_mean)
+            else:
+                pass
         # you can export between linear, quadratic, cubic interpretation map
-        dis_map.append((z_mean,dc_map))
+        dis_map.append((z_mean, dc_map))
+
+        # export the raw point difference map
+        raw_dis_map.append((z_mean, raw_map))
         print('index at %d plane with linear plane has std %.2f' % (z_mean, np.std(dl_map)))
         print('index at %d plane with quadratic plane has std %.2f' % (z_mean, np.std(dq_map)))
-        print('index at %d plane with cubic plane has std %.2f' % (z_mean,np.std(dc_map)))
-        print('done with %d out of %d' % (int(j+1), len(data_sets)))
+        print('index at %d plane with cubic plane has std %.2f' % (z_mean, np.std(dc_map)))
+        print('done with %d out of %d' % (int(j + 1), len(data_sets)))
+
+        # export the orientation map
+        orientation = np.ones((512, 512))
+        for i in range(c.shape[0]):
+            for j in range(c.shape[1]):
+                if 0 < i < 256 and 0 < j < 256:
+                    c[i, j] = 0
+                else:
+                    pass

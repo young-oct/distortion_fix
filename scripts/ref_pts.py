@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2022-07-18 21:11
 # @Author  : young wang
-# @FileName: grid_export.py
+# @FileName: ref_pts.py
 # @Software: PyCharm
 
 import glob

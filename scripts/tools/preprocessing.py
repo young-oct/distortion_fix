@@ -77,7 +77,7 @@ def filter_mask(slice, vmin, vmax):
 
 
 class sphere_fit:
-    def __init__(self, pts, centre = None, fixed_origin = True):
+    def __init__(self, pts, centre=None, fixed_origin=True):
 
         self.x, self.y, self.z = zip(*pts)
         self.fixed_origin = fixed_origin
@@ -118,7 +118,7 @@ class sphere_fit:
         c, residules, _, _ = np.linalg.lstsq(self.A, self.B, rcond=None)
         radius = np.sqrt((c[0] * c[0]) + (c[1] * c[1]) + (c[2] * c[2]) + c[3])
         if self.fixed_origin:
-            origin = (c[0]+self.centre[0], c[1]+self.centre[1], c[2]+self.centre[2])
+            origin = (c[0] + self.centre[0], c[1] + self.centre[1], c[2] + self.centre[2])
         else:
             origin = (c[0], c[1], c[2])
 
@@ -141,8 +141,8 @@ class sphere_fit:
             y = y + y0
             z = z + z0
 
-        ax.scatter(self.x, self.y, self.z, zdir='z', s=0.1, c='b',alpha=0.3, rasterized=True)
-        ax.plot_wireframe(x, y, z, color="r",)
+        ax.scatter(self.x, self.y, self.z, zdir='z', s=0.1, c='b', alpha=0.3, rasterized=True)
+        ax.plot_wireframe(x, y, z, color="r", )
         origin = np.asarray(self.origin).flatten()
         ax.set_title('radius = %.2f \n origin(x,y,z) is %s' % (self.radius, origin))
         return ax
@@ -162,7 +162,7 @@ class plane_fit:
         self.A = self.form_A()
         self.B = self.form_B()
 
-        self.xx, self.yy = np.arange(0, 512, 1),np.arange(0, 512, 1)
+        self.xx, self.yy = np.arange(0, 512, 1), np.arange(0, 512, 1)
 
         self.x_plane, self.y_plane = np.meshgrid(self.xx, self.yy)
         self.zc = self.cal_plane()
@@ -176,7 +176,7 @@ class plane_fit:
         elif self.order == 2:
             # the  equation for a quadratic(n=2) plane is: ax^2+bxy+cy^2+dx+ey+f = z s.t Ax = B
             # A = [x0^2, x0y0, y0^2, x0, y0, 1,......xn^2, xnyn, yn^2, xn, yn, 1].T
-            A = np.c_[self.x ** 2, self.x * self.y,  self.y ** 2,
+            A = np.c_[self.x ** 2, self.x * self.y, self.y ** 2,
                       self.x, self.y, np.ones(self.x.shape[0])]
 
         elif self.order == 3:
@@ -201,13 +201,10 @@ class plane_fit:
                       self.x * self.y,
                       self.x, self.y,
                       np.ones(self.x.shape[0])]
-
-
         else:
             pass
 
         return A
-
 
     def form_B(self):
 
@@ -225,30 +222,29 @@ class plane_fit:
 
         # x = [a, b, c, d, e, f].T
         elif self.order == 2:
-            zc = c[0]*self.x_plane**2 + \
-                 c[1]*self.x_plane*self.y_plane+\
-                 c[2]*self.y_plane**2 +c[3]*self.x_plane+\
-                 c[4]*self.y_plane+c[5]
+            zc = c[0] * self.x_plane ** 2 + \
+                 c[1] * self.x_plane * self.y_plane + \
+                 c[2] * self.y_plane ** 2 + c[3] * self.x_plane + \
+                 c[4] * self.y_plane + c[5]
 
         # x = [a, b, c, d, e, f, h, i, j].T
         elif self.order == 3:
 
-            zc = c[0] * self.x_plane**3 + \
-                 c[1] * self.y_plane**3 + \
+            zc = c[0] * self.x_plane ** 3 + \
+                 c[1] * self.y_plane ** 3 + \
                  c[2] * np.prod(np.c_[self.x_plane ** 2, self.y_plane], axis=1) + \
                  c[3] * np.prod(np.c_[self.x_plane, self.y_plane ** 2], axis=1) + \
-                 c[4] * self.x_plane**2 + c[5] * self.y_plane**2 + \
+                 c[4] * self.x_plane ** 2 + c[5] * self.y_plane ** 2 + \
                  c[6] * self.x_plane * self.y_plane + \
                  c[7] * self.x_plane + c[8] * self.y_plane + c[9]
 
             pass
         return zc
 
+    def plot(self, ax, low=0, high=330):
 
-    def plot(self, ax, low = 0, high = 330):
-
-        ax.scatter(self.x, self.y, self.z, zdir='z', s=0.1, c='b',alpha=0.3, rasterized=True)
-        ax.plot_surface(self.x_plane, self.y_plane, self.zc, color='r',alpha=0.5)
+        ax.scatter(self.x, self.y, self.z, zdir='z', s=0.1, c='b', alpha=0.3, rasterized=True)
+        ax.plot_surface(self.x_plane, self.y_plane, self.zc, color='r', alpha=0.5)
 
         ax.set_zlabel('z')
         ax.set_xlabel('x')
@@ -259,20 +255,20 @@ class plane_fit:
         return ax
 
 
-def frame_index(volume, dir, index,shift = 0):
+def frame_index(volume, dir, index, shift=0):
     peak_loc = []
 
     if dir == 'x':
-        slice = volume[index,:,:]
+        slice = volume[index, :, :]
         for i in range(slice.shape[0]):
             a_line = slice[i, :]
             peaks = np.where(a_line == 255)
             if len(peaks[0]) >= 1:
-                peak_loc.append((i, int(peaks[0][-1] -shift)))
+                peak_loc.append((i, int(peaks[0][-1] - shift)))
             else:
                 pass
     elif dir == 'y':
-        slice = volume[:,index,:]
+        slice = volume[:, index, :]
         for i in range(slice.shape[0]):
             a_line = slice[i, :]
             peaks = np.where(a_line == 255)
@@ -285,9 +281,7 @@ def frame_index(volume, dir, index,shift = 0):
     return peak_loc
 
 
-
-
-def surface_index(volume, shift = 0):
+def surface_index(volume, shift=0):
     '''get the index for the peaks in the each volume'''
 
     peak_loc = []
@@ -303,6 +297,7 @@ def surface_index(volume, shift = 0):
 
     return peak_loc
 
+
 def max_slice(volume):
     # take a volume and find the index of the maximum intensity
     # slice
@@ -313,6 +308,7 @@ def max_slice(volume):
 
     return np.argmax(line)
 
+
 def mip_stack(volume, index, thickness):
     assert volume.ndim == 3
 
@@ -320,6 +316,7 @@ def mip_stack(volume, index, thickness):
 
     if low_b >= 0 or high_b <= volume.shape[-1]:
         return np.amax(volume[:, :, low_b::high_b], axis=2)
+
 
 def convert(img, target_type_min, target_type_max, target_type):
     imin = img.min()

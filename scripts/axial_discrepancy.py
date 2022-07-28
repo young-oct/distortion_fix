@@ -47,8 +47,8 @@ if __name__ == '__main__':
 
     dis_map = []
     raw_dis_map = []
-    for j in range(1):
-    # for j in range(len(data_sets)):
+    # for j in range(1):
+    for j in range(len(data_sets)):
         data = load_from_oct_file(data_sets[j], clean=False)
         vmin, vmax = int(p_factor[j] * 255), 255
 
@@ -207,3 +207,13 @@ if __name__ == '__main__':
                     orientation[i, j] = 0
                 else:
                     pass
+
+        fig = plt.figure(figsize=(16, 9))
+        ax = fig.add_subplot(1, 2, 1, projection='3d')
+        surf = ax.plot_wireframe(xx, yy, orientation, alpha=0.2)
+        ax = fig.add_subplot(1, 2, 2)
+        im, cbar = heatmap(orientation, ax=ax,
+                           cmap="hot", cbarlabel='depth variation')
+        fig.suptitle('orientation map', fontsize=15)
+        plt.tight_layout()
+        plt.show()

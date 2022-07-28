@@ -11,6 +11,8 @@ import matplotlib.pyplot as plt
 from tools.auxiliary import load_from_oct_file
 from tools.preprocessing import filter_mask, surface_index, frame_index, plane_fit
 import pyransac3d as pyrsc
+import os
+from scipy.ndimage import median_filter,gaussian_filter
 
 def heatmap(data, ax=None,
             cbar_kw={}, cbarlabel="", **kwargs):
@@ -38,12 +40,24 @@ def heatmap(data, ax=None,
 
     return im, cbar
 
+def export_map(map_arr, file_path):
+    # export correction map
+    map_arr = map_arr.astype(np.float32)
+    map_arr_size = np.uint32(map_arr.size)
+
+    # Save correction maps to disk
+    with open(file_path, 'wb') as f:
+        f.write(map_arr_size)
+        f.write(map_arr)
+
 
 if __name__ == '__main__':
 
     data_sets = natsorted(glob.glob('../data/1mW/flat surface(correctd)/*.oct'))
+    folder_path = '../data/correction map'
+
     p_factor = np.linspace(0.75, 0.8, len(data_sets))
-    shift = 3
+    shift = 0
 
     dis_map = []
     raw_dis_map = []
@@ -101,6 +115,11 @@ if __name__ == '__main__':
                 raw_map[xz_pts[i][0], xz_pts[i][1]] = int(xz_pts[i][2] - z_mean)
             else:
                 pass
+
+        raw_map = gaussian_filter(raw_map, sigma=4)
+        file_path = (os.path.join(folder_path, '%d.bin' % z_mean))
+
+        export_map(raw_map, file_path)
 
         fig.suptitle('index at %d plane' % z_mean, fontsize=15)
 
@@ -220,3 +239,38 @@ if __name__ == '__main__':
         fig.suptitle('orientation map', fontsize=15)
         plt.tight_layout()
         plt.show()
+
+        # # fig, ax = plt.subplots(1, 4, figsize=(16, 9))
+        # fig = plt.figure(figsize=(16, 9))
+        # ax = fig.add_subplot(2, 4, 1)
+        # ax.imshow(raw_map)
+        # ax.set_title('raw')
+        # ax = fig.add_subplot(2, 4, 5, projection='3d')
+        # surf = ax.plot_wireframe(xx, yy, raw_map, alpha=0.2)
+        #
+        # ax = fig.add_subplot(2, 4, 2)
+        # ksize = 7
+        # temp_median = median_filter(raw_map, size=ksize)
+        # ax.imshow(temp_median)
+        # ax.set_title('raw with median size of %d'%ksize)
+        # ax = fig.add_subplot(2, 4, 6, projection='3d')
+        # surf = ax.plot_wireframe(xx, yy, temp_median, alpha=0.2)
+        #
+        # ax = fig.add_subplot(2, 4, 3)
+        # gsize = 4
+        # temp_guass= gaussian_filter(raw_map, sigma=gsize)
+        # ax.imshow(temp_guass)
+        # ax.set_title('raw with guassian size of %.3f'%gsize)
+        # ax = fig.add_subplot(2, 4, 7, projection='3d')
+        # surf = ax.plot_wireframe(xx, yy, temp_guass, alpha=0.2)
+        #
+        #
+        # ax = fig.add_subplot(2, 4, 4)
+        # temp= gaussian_filter(temp_median, sigma=gsize)
+        # ax.imshow(temp)
+        # ax.set_title('combo A')
+        # ax = fig.add_subplot(2, 4, 8, projection='3d')
+        # surf = ax.plot_wireframe(xx, yy, temp, alpha=0.2)
+        #
+        # plt.tight_layout()
+        # plt.show()

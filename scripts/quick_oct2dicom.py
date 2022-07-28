@@ -12,7 +12,7 @@ from os.path import join
 
 if __name__ == '__main__':
 
-    data_sets = natsorted(glob.glob('../data/1mW/flat surface/*.oct'))
+    data_sets = natsorted(glob.glob('../data/comparsion/*.oct'))
     data = load_from_oct_file(data_sets[-1])
     #create dicom stacks for comparison
     dicom_path = join('../', 'data','validation dicom')
@@ -20,14 +20,14 @@ if __name__ == '__main__':
 
     folder_creator(dicom_path)
 
-    file_path = 'ori'
+    file_path = 'scale'
     f_path = join(dicom_path,file_path)
     folder_creator(f_path)
 
-    patient_info = {'PatientName': 'ori',
+    patient_info = {'PatientName': 'validation',
                     'PatientBirthDate': '19600507',
                     'PatientSex': 'M',
-                    'PatientAge': '63Y',
+                    'PatientAge': '64Y',
                     'PatientID': '202107070001',
                     'SeriesDescription': file_path,
                     'StudyDescription': 'OCT 3D'}

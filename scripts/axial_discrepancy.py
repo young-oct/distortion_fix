@@ -191,9 +191,9 @@ if __name__ == '__main__':
 
         # export the orientation map
         orientation = np.ones((512, 512))
-        for i in range(c.shape[0]):
-            for j in range(c.shape[1]):
+        for i in range(orientation.shape[0]):
+            for j in range(orientation.shape[1]):
                 if 0 < i < 256 and 0 < j < 256:
-                    c[i, j] = 0
+                    orientation[i, j] = 0
                 else:
                     pass

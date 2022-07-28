@@ -210,6 +210,9 @@ if __name__ == '__main__':
 
         fig = plt.figure(figsize=(16, 9))
         ax = fig.add_subplot(1, 2, 1, projection='3d')
+        ax.set_xlabel('x')
+        ax.set_ylabel('y')
+        ax.set_zlabel('z')
         surf = ax.plot_wireframe(xx, yy, orientation, alpha=0.2)
         ax = fig.add_subplot(1, 2, 2)
         im, cbar = heatmap(orientation, ax=ax,

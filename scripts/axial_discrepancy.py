@@ -12,7 +12,6 @@ from tools.auxiliary import load_from_oct_file
 from tools.preprocessing import filter_mask, surface_index, frame_index, plane_fit
 import pyransac3d as pyrsc
 
-
 def heatmap(data, ax=None,
             cbar_kw={}, cbarlabel="", **kwargs):
     if not ax:
@@ -48,7 +47,8 @@ if __name__ == '__main__':
 
     dis_map = []
     raw_dis_map = []
-    for j in range(len(data_sets)):
+    for j in range(1):
+    # for j in range(len(data_sets)):
         data = load_from_oct_file(data_sets[j], clean=False)
         vmin, vmax = int(p_factor[j] * 255), 255
 
@@ -93,6 +93,15 @@ if __name__ == '__main__':
         z_ideal = (d - a * xx - b * yy) / c
         z_mean = np.mean(z_ideal)
 
+        # obtained the raw point difference map
+        raw_map = np.zeros((512, 512))
+        for i in range(len(xz_pts)):
+            lb, hb = z_mean * 0.5, z_mean * 1.5
+            if lb <= xz_pts[i][2] <= hb:
+                raw_map[xz_pts[i][0], xz_pts[i][1]] = int(xz_pts[i][2] - z_mean)
+            else:
+                pass
+
         fig.suptitle('index at %d plane' % z_mean, fontsize=15)
 
         plt.tight_layout()
@@ -119,6 +128,13 @@ if __name__ == '__main__':
         z_low, z_high = int(z_mean - 30), int(z_mean + 30)
         ax.set_zlim([z_low, z_high])
 
+        ax = fig.add_subplot(3, 4, 5, projection='3d')
+        surf = ax.plot_wireframe(xx, yy, raw_map, alpha=0.2)
+
+        ax = fig.add_subplot(3, 4, 9)
+        im, cbar = heatmap(raw_map, ax=ax,
+                           cmap="hot", cbarlabel='depth variation')
+
         ax = fig.add_subplot(3, 4, 2, projection='3d')
         ax.set_title('raw points cloud \n'
                      '& linearly fitted plane', size=15)
@@ -133,7 +149,7 @@ if __name__ == '__main__':
         surf = ax.plot_wireframe(xx, yy, dl_map, alpha=0.2)
 
         ax = fig.add_subplot(3, 4, 10)
-        im, cbar = heatmap(dl_map, ax=ax,
+        im, cbar = heatmap(dl_map.T, ax=ax,
                            cmap="hot", cbarlabel='depth variation')
 
         ax = fig.add_subplot(3, 4, 3, projection='3d')
@@ -149,7 +165,7 @@ if __name__ == '__main__':
         surf = ax.plot_wireframe(xx, yy, dq_map, alpha=0.2)
 
         ax = fig.add_subplot(3, 4, 11)
-        im, cbar = heatmap(dq_map, ax=ax,
+        im, cbar = heatmap(dq_map.T, ax=ax,
                            cmap="hot", cbarlabel='depth variation')
 
         ax = fig.add_subplot(3, 4, 4, projection='3d')
@@ -165,25 +181,19 @@ if __name__ == '__main__':
         surf = ax.plot_wireframe(xx, yy, dc_map, alpha=0.2)
 
         ax = fig.add_subplot(3, 4, 12)
-        im, cbar = heatmap(dc_map, ax=ax,
+        im, cbar = heatmap(dc_map.T, ax=ax,
                            cmap="hot", cbarlabel='depth variation')
 
         fig.suptitle('index at %d plane' % z_mean, fontsize=15)
         plt.tight_layout()
         plt.show()
 
-        raw_map = np.zeros((512, 512))
-        for i in range(len(a)):
-            lb, hb = z_mean * 0.5, z_mean * 1.5
-            if lb <= a[i][0] <= hb:
-                raw_map[a[i][0], a[i][1]] = int(raw_map[i][2] - z_mean)
-            else:
-                pass
+
         # you can export between linear, quadratic, cubic interpretation map
         dis_map.append((z_mean, dc_map))
-
         # export the raw point difference map
         raw_dis_map.append((z_mean, raw_map))
+
         print('index at %d plane with linear plane has std %.2f' % (z_mean, np.std(dl_map)))
         print('index at %d plane with quadratic plane has std %.2f' % (z_mean, np.std(dq_map)))
         print('index at %d plane with cubic plane has std %.2f' % (z_mean, np.std(dc_map)))
@@ -193,7 +203,7 @@ if __name__ == '__main__':
         orientation = np.ones((512, 512))
         for i in range(orientation.shape[0]):
             for j in range(orientation.shape[1]):
-                if 0 < i < 256 and 0 < j < 256:
+                if 0 <= i <= 256 and 0 <= j <= 256:
                     orientation[i, j] = 0
                 else:
                     pass

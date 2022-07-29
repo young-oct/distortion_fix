@@ -107,9 +107,6 @@ if __name__ == '__main__':
         xp, yp, zp = zip(*xz_pts)
         ax.scatter(xp, yp, zp, s=0.5, alpha=0.5, c='r')
 
-        idx_x = np.setdiff1d(np.arange(0, data.shape[1]), pts[:, 0])
-        idx_y = np.setdiff1d(np.arange(0, data.shape[2]), pts[:, 1])
-
         surf = ax.plot_wireframe(xx, yy, z_ideal, alpha=0.2)
 
         ax.set_title('raw points cloud \n'

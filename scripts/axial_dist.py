@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2022-07-22 13:44
 # @Author  : young wang
-# @FileName: axial_discrepancy.py
+# @FileName: axial_dist.py
 # @Software: PyCharm
 
 import glob

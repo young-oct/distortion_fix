@@ -13,11 +13,23 @@ from tools.proc import surface_index, frame_index, plane_fit,filter_mask
 from tools.pos_proc import heatmap,export_map
 import pyransac3d as pyrsc
 import os
+import cv2 as cv
 from scipy.ndimage import median_filter,gaussian_filter
+import matplotlib
+from skimage import feature
 
 if __name__ == '__main__':
 
-    data_sets = natsorted(glob.glob('../data/1mW/flat surface(correctd)/*.oct'))
+    matplotlib.rcParams.update(
+        {
+            'font.size': 13.5,
+            'text.usetex': False,
+            'font.family': 'sans-serif',
+            'mathtext.fontset': 'stix',
+        }
+    )
+
+    data_sets = natsorted(glob.glob('../data/1mW/flat surface fixed/*.oct'))
     folder_path = '../data/correction map'
 
     p_factor = np.linspace(0.75, 0.8, len(data_sets))
@@ -25,6 +37,7 @@ if __name__ == '__main__':
 
     dis_map = []
     raw_dis_map = []
+    res_error = []
     # for j in range(2):
     for j in range(len(data_sets)):
         data = load_from_oct_file(data_sets[j], clean=False)
@@ -46,12 +59,12 @@ if __name__ == '__main__':
         xz_slc = frame_index(xz_mask, 'x', idx, shift)
         x, y = zip(*xz_slc)
         ax.plot(y, x, linewidth=5, alpha=0.8, color='r')
-        ax.set_title('slice %d from the xz direction' % idx, size=15)
+        ax.set_title('slice %d from the xz direction' % idx)
 
         ax = fig.add_subplot(122, projection='3d')
         xp, yp, zp = zip(*xz_pts)
         ax.scatter(xp, yp, zp, s=0.1, alpha=0.1, c='r')
-        ax.set_title('raw points cloud', size=15)
+        ax.set_title('raw points cloud')
         ax.set_xlabel('x')
         ax.set_ylabel('y')
         ax.set_zlabel('z')
@@ -83,7 +96,7 @@ if __name__ == '__main__':
         raw_map = gaussian_filter(raw_map, sigma=4)
 
 
-        fig.suptitle('index at %d plane' % z_mean, fontsize=15)
+        fig.suptitle('index at %d plane' % z_mean)
 
         plt.tight_layout()
         plt.show()
@@ -97,7 +110,7 @@ if __name__ == '__main__':
         surf = ax.plot_wireframe(xx, yy, z_ideal, alpha=0.2)
 
         ax.set_title('raw points cloud \n'
-                     '& ideal plane', size=15)
+                     '& ideal plane')
         ax.set_xlabel('x')
         ax.set_ylabel('y')
         ax.set_zlabel('z')
@@ -115,7 +128,7 @@ if __name__ == '__main__':
 
         ax = fig.add_subplot(3, 4, 2, projection='3d')
         ax.set_title('raw points cloud \n'
-                     '& linearly fitted plane', size=15)
+                     '& linearly fitted plane')
 
         l_plane = plane_fit(xz_pts, order=1).zc
         ax.scatter(xp, yp, zp, s=0.5, alpha=0.5, c='r')
@@ -132,7 +145,7 @@ if __name__ == '__main__':
 
         ax = fig.add_subplot(3, 4, 3, projection='3d')
         ax.set_title('raw points cloud \n'
-                     '& quadratically fitted plane', size=15)
+                     '& quadratically fitted plane')
 
         q_plane = plane_fit(xz_pts, order=2).zc
         ax.scatter(xp, yp, zp, s=0.5, alpha=0.5, c='r')
@@ -148,7 +161,7 @@ if __name__ == '__main__':
 
         ax = fig.add_subplot(3, 4, 4, projection='3d')
         ax.set_title('raw points cloud \n'
-                     '& cubically fitted plane', size=15)
+                     '& cubically fitted plane')
 
         c_plane = plane_fit(xz_pts, order=3).zc
         ax.scatter(xp, yp, zp, s=0.5, alpha=0.5, c='r')
@@ -162,7 +175,7 @@ if __name__ == '__main__':
         im, cbar = heatmap(dc_map.T, ax=ax,
                            cmap="hot", cbarlabel='depth variation')
 
-        fig.suptitle('index at %d plane' % z_mean, fontsize=15)
+        fig.suptitle('index at %d plane' % z_mean)
         plt.tight_layout()
         plt.show()
 
@@ -171,16 +184,14 @@ if __name__ == '__main__':
         dis_map.append((z_mean, dc_map))
         # export the raw point difference map
         raw_dis_map.append((z_mean, raw_map))
+        res_error.append((z_mean,np.std(raw_map)))
 
-        temp_name = data_sets[j].split('/')[-1]
-        file_name = temp_name.split('.')[0]
-        file_path = (os.path.join(folder_path, '%s.bin' % file_name))
+        # temp_name = data_sets[j].split('/')[-1]
+        # file_name = temp_name.split('.')[0]
+        # file_path = (os.path.join(folder_path, '%s.bin' % file_name))
 
-        export_map(raw_map, file_path)
+        # export_map(raw_map, file_path)
 
-        print('index at %d plane with linear plane has std %.2f' % (z_mean, np.std(dl_map)))
-        print('index at %d plane with quadratic plane has std %.2f' % (z_mean, np.std(dq_map)))
-        print('index at %d plane with cubic plane has std %.2f' % (z_mean, np.std(dc_map)))
         print('done with %d out of %d' % (int(j + 1), len(data_sets)))
 
     # export the orientation map
@@ -204,8 +215,65 @@ if __name__ == '__main__':
     fig.suptitle('orientation map', fontsize=15)
     plt.tight_layout()
     plt.show()
+    #
+    fig,ax = plt.subplots(2,2, figsize=(16, 9), constrained_layout=True)
+    depth, er_map = zip(*raw_dis_map)
+    dep,error = zip(*res_error)
 
-        # # fig, ax = plt.subplots(1, 4, figsize=(16, 9))
+    ax[0, 0].imshow(er_map[0])
+    ax[0,0].set_axis_off()
+    #
+    ax[1,0].plot(dep, error, marker = 'o',ms = 10)
+    ax[1,0].set_ylabel('axial depth [pixel]', size = 20)
+    ax[1,0].set_ylabel('standard deviation', size = 20)
+    ax[1,0].set_title('without trimming the edge', size=20)
+    ax[1,0].set_ylim(bottom=0, top=1)
+
+    radius = 180
+
+    error_crop = []
+    for i in range(len(er_map)):
+
+        img = raw_dis_map[i][-1]
+        edges = feature.canny(raw_dis_map[i][-1], sigma=1)
+        edges = edges.astype(np.float32)
+
+        M = cv.moments(edges)
+        # calculate x,y coordinate of center
+        cX = int(M['m10'] / M['m00'])
+        cY = int(M['m01'] / M['m00'])
+    #
+        for k in range(img.shape[0]):
+            for j in range(img.shape[1]):
+                x = k - cX
+                y = j - cY
+                r = np.sqrt(x**2 + y **2)
+                if r > radius:
+                    img[k,j] = 0
+                else:
+                    pass
+        error_crop.append(np.std(img))
+
+        # ax[1,1].plot(depth[i],np.std(img), marker = 'o',ms = 10)
+
+        if i == 0:
+            ax[0, 1].imshow(img)
+            ax[0,1].set_axis_off()
+            ax[0, 1].plot(cY,cX, marker = 'o',ms = 10, c ='r')
+        else:
+            pass
+
+    ax[1,1].plot(depth,error_crop, marker = 'o',ms = 10)
+    ax[1,1].set_ylim(bottom=0, top=1)
+
+    ax[1,1].set_ylabel('axial depth [pixel]', size = 20)
+    ax[1,1].set_ylabel('standard deviation', size = 20)
+    ax[1,1].set_title('trimming the edge', size=20)
+
+    fig.suptitle('residual error against ideal plane versus depth', size = 25)
+    plt.show()
+
+    # # fig, ax = plt.subplots(1, 4, figsize=(16, 9))
         # fig = plt.figure(figsize=(16, 9))
         # ax = fig.add_subplot(2, 4, 1)
         # ax.imshow(raw_map)

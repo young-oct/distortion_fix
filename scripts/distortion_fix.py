@@ -13,9 +13,19 @@ from tools.pre_proc import folder_creator,load_from_oct_file
 from tools.pos_proc import oct_to_dicom
 from os.path import join
 from tools.proc import max_slice,mip_stack,binary_mask
+import matplotlib
 
 
 if __name__ == '__main__':
+
+    matplotlib.rcParams.update(
+        {
+            'font.size': 13.5,
+            'text.usetex': False,
+            'font.family': 'sans-serif',
+            'mathtext.fontset': 'stix',
+        }
+    )
 
     data = glob.glob('../data/2022.07.13_1mm(3dprint)/trial 5/*.oct')
 
@@ -96,11 +106,11 @@ if __name__ == '__main__':
     dst = cv.remap(val_slice, mapx, mapy, cv.INTER_LINEAR)
 
     fig,ax = plt.subplots(1,2, figsize = (16,9))
-    ax[0].set_title('distorted validation image', size=25)
+    ax[0].set_title('distorted validation image')
     ax[0].set_axis_off()
     ax[0].imshow(val_slice, 'gray', vmin=vmin, vmax=vmax)
 
-    ax[1].set_title('undistorted validation image', size=25)
+    ax[1].set_title('undistorted validation image')
     ax[1].set_axis_off()
     ax[1].imshow(dst, 'gray', vmin=vmin, vmax=vmax)
 

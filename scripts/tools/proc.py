@@ -3,10 +3,13 @@
 # @Author  : young wang
 # @FileName: proc.py
 # @Software: PyCharm
-import numpy as np
 from scipy.ndimage import gaussian_filter, median_filter
 import cv2 as cv
-
+import numpy as np
+from scipy.spatial import Delaunay
+from scipy.interpolate import LinearNDInterpolator
+import math
+from numba import jit
 
 class sphere_fit:
     def __init__(self, pts, centre=None, fixed_origin=True):
@@ -295,11 +298,7 @@ def mip_stack(volume, index, thickness):
 
 
 
-import numpy as np
-from scipy.spatial import Delaunay
-from scipy.interpolate import LinearNDInterpolator
-import math
-from numba import jit
+
 
 
 @jit(nopython=True)

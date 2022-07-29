@@ -5,14 +5,9 @@
 # @Software: PyCharm
 
 import glob
-import numpy as np
-import cv2 as cv
-from matplotlib.patches import Circle
-from scipy import ndimage, misc
-
 import matplotlib.pyplot as plt
-from tools.preprocessing import max_slice,mip_stack,binary_mask,convert,filter_mask
-from tools.auxiliary import folder_creator, arrTolist, listtoarr, load_from_oct_file
+from tools.proc import max_slice,filter_mask
+from tools.pre_proc import load_from_oct_file
 
 if __name__ == '__main__':
 

@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
-# @Time    : 2022-03-25 8:54 a.m.
+# @Time    : 2022-03-25 8:18 a.m.
 # @Author  : young wang
-# @FileName: auxiliary.py
+# @FileName: pre_proc.py
 # @Software: PyCharm
-import os
+"""preprocessing module"""
 
-from scripts.tools.preprocessing import clean_removal,imag2uint,despecking
+import os
+from scripts.tools.proc import clean_removal
+from scripts.tools.pos_proc import imag2uint
 import numpy as np
 from scripts.tools.OssiviewBufferReader import OssiviewBufferReader
 

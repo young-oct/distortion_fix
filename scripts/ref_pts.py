@@ -7,8 +7,8 @@
 import glob
 import numpy as np
 import matplotlib.pyplot as plt
-from tools.auxiliary import load_from_oct_file
-from tools.preprocessing import filter_mask, \
+from tools.pre_proc import load_from_oct_file
+from tools.proc import filter_mask, \
     surface_index, sphere_fit, frame_index, max_slice, despecking
 from scipy.ndimage import gaussian_filter, median_filter
 from skimage import exposure

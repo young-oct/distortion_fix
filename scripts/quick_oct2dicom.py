@@ -6,8 +6,8 @@
 
 import glob
 from natsort import natsorted
-from tools.auxiliary import folder_creator,load_from_oct_file
-from tools.dicom_converter import oct_to_dicom
+from tools.pre_proc import folder_creator,load_from_oct_file
+from tools.pos_proc import oct_to_dicom
 from os.path import join
 
 if __name__ == '__main__':

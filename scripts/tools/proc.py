@@ -1,79 +1,11 @@
 # -*- coding: utf-8 -*-
-# @Time    : 2022-03-25 8:18 a.m.
+# @Time    : 2022-07-29 09:54
 # @Author  : young wang
-# @FileName: preprocessing.py
+# @FileName: proc.py
 # @Software: PyCharm
-"""preprocessing module for geometric correction"""
-
 import numpy as np
 from scipy.ndimage import gaussian_filter, median_filter
-import numpy as np
 import cv2 as cv
-from scipy.signal import find_peaks
-import matplotlib.pyplot as plt
-
-def clean_removal(data, top=5, radius=230):
-    '''
-
-    :param data: oct 3d data 512x512x330
-    :param top: top index to be removed
-    :param radius: radius to remove the artfact as a result of scanning
-    :return: oct 3d data 512x512x330
-    '''
-
-    data[:, :, 0:top] = 0
-    for i in range(data.shape[0]):
-        for j in range(data.shape[1]):
-            if np.sqrt((i - 256) ** 2 + (j - 256) ** 2) >= radius:
-                data[i, j, :] = 0
-
-    return data
-
-
-def imag2uint(data, lt=0, ut=255):
-    '''
-    convert pixel data from the 255 range to unit16 range(0-65535)
-
-    :param data:  oct 3d data 512x512x330
-    :param lt: lower threshold of pixel values to be removed
-    :param ut: upper threshold of pixel values to be removed
-    :return: oct 3d data 512x512x330
-    '''
-
-    # remove the low and high bounds of the pixel intensity data points
-    data = np.clip(data, lt, np.max(data))
-    # pixel intensity normalization
-    # for detail, please see wiki page
-    # https://en.wikipedia.org/wiki/Normalization_(image_processing)
-
-    data = (data - np.min(data)) * ut / (np.max(data) - np.min(data))
-
-    return np.uint16(np.around(data, 0))
-
-
-def despecking(frame, sigma=0.8, size=3):
-    """
-    :param frame: 512x 330 or 330x512 oct b mode frame
-    :param sigma: sigma for gaussian filter
-    :param size: median filter kernel size """
-
-    frame = gaussian_filter(frame, sigma=sigma)
-
-    return median_filter(frame, size=size)
-
-
-def binary_mask(slice, vmin, vmax):
-    ret, msk = cv.threshold(slice, vmin, vmax, cv.THRESH_BINARY)
-    krn = cv.getStructuringElement(cv.MORPH_RECT, (5, 5))
-
-    return cv.bitwise_and(cv.dilate(msk, krn, iterations=100), msk)
-
-
-def filter_mask(slice, vmin, vmax):
-    mask = binary_mask(slice, vmin, vmax)
-    mask = median_filter(mask, size=10)
-    mask = gaussian_filter(mask, sigma=0.2)
-    return mask
 
 
 class sphere_fit:
@@ -298,6 +230,50 @@ def surface_index(volume, shift=0):
     return peak_loc
 
 
+def clean_removal(data, top=5, radius=230):
+    '''
+
+    :param data: oct 3d data 512x512x330
+    :param top: top index to be removed
+    :param radius: radius to remove the artfact as a result of scanning
+    :return: oct 3d data 512x512x330
+    '''
+
+    data[:, :, 0:top] = 0
+    for i in range(data.shape[0]):
+        for j in range(data.shape[1]):
+            if np.sqrt((i - 256) ** 2 + (j - 256) ** 2) >= radius:
+                data[i, j, :] = 0
+
+    return data
+
+
+
+def despecking(frame, sigma=0.8, size=3):
+    """
+    :param frame: 512x 330 or 330x512 oct b mode frame
+    :param sigma: sigma for gaussian filter
+    :param size: median filter kernel size """
+
+    frame = gaussian_filter(frame, sigma=sigma)
+
+    return median_filter(frame, size=size)
+
+
+def binary_mask(slice, vmin, vmax):
+    ret, msk = cv.threshold(slice, vmin, vmax, cv.THRESH_BINARY)
+    krn = cv.getStructuringElement(cv.MORPH_RECT, (5, 5))
+
+    return cv.bitwise_and(cv.dilate(msk, krn, iterations=100), msk)
+
+
+def filter_mask(slice, vmin, vmax):
+    mask = binary_mask(slice, vmin, vmax)
+    mask = median_filter(mask, size=10)
+    mask = gaussian_filter(mask, sigma=0.2)
+    return mask
+
+
 def max_slice(volume):
     # take a volume and find the index of the maximum intensity
     # slice
@@ -318,40 +294,78 @@ def mip_stack(volume, index, thickness):
         return np.amax(volume[:, :, low_b::high_b], axis=2)
 
 
-def convert(img, target_type_min, target_type_max, target_type):
-    imin = img.min()
-    imax = img.max()
 
-    a = (target_type_max - target_type_min) / (imax - imin)
-    b = target_type_max - a * imax
-    new_img = (a * img + b).astype(target_type)
-    return new_img
+import numpy as np
+from scipy.spatial import Delaunay
+from scipy.interpolate import LinearNDInterpolator
+import math
+from numba import jit
 
-def heatmap(data, ax=None,
-            cbar_kw={}, cbarlabel="", **kwargs):
-    if not ax:
-        ax = plt.gca()
 
-    # Plot the heatmap
-    im = ax.imshow(data, **kwargs)
+@jit(nopython=True)
+def getPolarco(f_zmax = 1.7, degree =10.5):
+    '''obtian correct polar coordinates from the distorted image
 
-    # Create colorbar
-    cbar = ax.figure.colorbar(im, ax=ax, **cbar_kw)
-    cbar.ax.set_ylabel(cbarlabel, rotation=-90, va="bottom")
+    since X and Y correction can be done independently with respect to Z,
+    here we replace X_dim, Y_dim mentioend in Josh's proposal as i_dim
+    for detailed math, see johs's proposal
+    we can do this because
+    (1) i_dim = X_dim = Y_dim = 512
+    (2) azimuth and elevation are roughly the same 10 degrees (according to Dan)
+    (3) 3D geometirc correction can be decomposed into two independent 2D correction
+    please see "Real-time correction of geometric distortion artifact
+     in large-volume optical coherence tomography paper'''
 
-    # Let the horizontal axes labeling appear on top.
-    ax.tick_params(top=True, bottom=False,
-                   labeltop=True, labelbottom=False)
+    i_dim, zdim, zmax = 512, 330, int(330 *f_zmax)
 
-    # Turn spines off and create white grid.
-    ax.spines[:].set_visible(False)
-    ax.set_axis_off()
+    _iz = np.zeros((i_dim, zdim, 2))  # construct iz plane
+    i0, z0 = int(i_dim / 2), zmax  # i0 is half of the i dimension
 
-    ax.grid(which="minor", color="w", linestyle='-', linewidth=3)
-    ax.tick_params(which="minor", bottom=False, left=False)
-    ax.set_title('std: %.2f' % np.std(data), y=0, pad=-14)
-    ax.xaxis.set_label_position('top')
-    # ax.set_xlabel('std: %.2f' % np.std(data))
-    # ax.set_title('Manual y', y=1.0, pad=-14)
+    i_phi = math.radians(degree)  # converting from degree to radiant
 
-    return im, cbar
+    ki = i_dim / (2 * i_phi)  # calculate pixel scaling factor for i dimension
+    # kz = 1.5 # calculate pixel scaling factor for z dimension, it should be Zmax/D, this is
+    # a magic number kind works,
+    kz = 1
+    for i in range(i_dim):
+        for z in range(zdim):  # pixel coordinates conversion
+            _iz[i, z, :] = [
+                (z + kz * z0) * math.sin((i - i0) / ki) * math.cos((i - i0) / ki) + i0,
+                (z + kz * z0) * math.cos((i - i0) / ki) * math.cos((i - i0) / ki) - kz * z0]
+
+        # _iz.reshape(i_dim * zdim, 2): numpy stores arrays in row-major order
+        # This means that the resulting two-column array will first contain all the x values,
+        # then all the y values rather than containing pairs of (x,y) in each row
+    _iz = _iz.reshape(i_dim * zdim, 2)
+    return _iz
+
+@jit(nopython=True)
+def valueRemap(dis_image):
+    """remap the data to match with the correct orientation"""
+
+    _v = np.zeros(dis_image.shape)
+    for i in range(dis_image.shape[0]):
+        for z in range(dis_image.shape[1]):  # pixel coordinates conversion
+
+            _v[i, z] = dis_image[i, -z]  # store the pixel date temporally and flip along the colume
+            # axis
+    return np.ravel(_v)
+
+def polar2cart(tri, xq, zq, values):
+    values = valueRemap(values)
+
+    """interpolate values from the target grid points"""
+
+    # initilize interpolator
+    interpolator = LinearNDInterpolator(tri, values)
+
+    # interpolate values from from with respect to the targeted
+    # cartisan coordinates
+    valueUpdate = interpolator(xq, zq)
+
+    return np.fliplr(valueUpdate)
+    # return valueUpdate
+
+def iniTri(polrcoordinate):
+    '''initialize triangulation'''
+    return Delaunay(polrcoordinate)

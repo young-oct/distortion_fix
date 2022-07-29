@@ -8,9 +8,10 @@ import glob
 from natsort import natsorted
 import numpy as np
 import matplotlib.pyplot as plt
-from tools.auxiliary import load_from_oct_file
-from tools.preprocessing import filter_mask, surface_index, frame_index, plane_fit,heatmap
+from tools.pre_proc import load_from_oct_file
 import pyransac3d as pyrsc
+from tools.proc import surface_index, frame_index, plane_fit,filter_mask
+from tools.pos_proc import heatmap
 from scipy.ndimage import median_filter,gaussian_filter
 import matplotlib
 

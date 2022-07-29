@@ -10,8 +10,8 @@ import cv2 as cv
 from matplotlib.patches import Circle
 from scipy import ndimage, misc
 import matplotlib.pyplot as plt
-from tools.auxiliary import folder_creator, arrTolist, listtoarr, load_from_oct_file
-from tools.dicom_converter import oct_to_dicom
+from tools.pre_proc import folder_creator, arrTolist, listtoarr, load_from_oct_file
+from tools.pos_proc import oct_to_dicom
 from os.path import join
 
 

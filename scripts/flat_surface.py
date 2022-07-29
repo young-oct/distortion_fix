@@ -8,8 +8,8 @@ import glob
 from natsort import natsorted
 import numpy as np
 import matplotlib.pyplot as plt
-from tools.auxiliary import load_from_oct_file
-from tools.preprocessing import filter_mask,surface_index,sphere_fit,frame_index
+from tools.pre_proc import load_from_oct_file
+from tools.proc import filter_mask,surface_index,sphere_fit,frame_index
 
 if __name__ == '__main__':
 

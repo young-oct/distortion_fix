@@ -254,12 +254,12 @@ if __name__ == '__main__':
     temp = np.asarray(pts)
     temp_list = [temp]
     list_ver_lines = prep.group_dots_ver_lines(temp, slope_ver, dist_ver,
-                                               ratio=0.01, num_dot_miss=5,
-                                               accepted_ratio=0.5)
+                                               ratio=0.05, num_dot_miss=20,
+                                               accepted_ratio=0.9)
     # list_ver_lines = prep.remove_residual_dots_ver(temp_list, slope_ver, 0.5)
 
     for line in list_ver_lines:
-        plt.plot(line[:, 1], 512 - line[:, 0], '-o', markersize=10)
+        plt.plot(line[:, 1],  line[:, 0], '-o', markersize=10)
 
     ax.imshow(a)
     plt.show()

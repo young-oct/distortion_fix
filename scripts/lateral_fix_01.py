@@ -77,6 +77,11 @@ if __name__ == '__main__':
     list_hor_lines0 = prep.group_dots_hor_lines(s_img, hor_slope, dot_dist, accepted_ratio=0.8)
     list_ver_lines0 = prep.group_dots_ver_lines(s_img, ver_slope, dot_dist, accepted_ratio=0.8)
 
+    # Optional: remove horizontal outliners
+    list_hor_lines0 = prep.remove_residual_dots_hor(list_hor_lines0, hor_slope)
+    # Optional: remove vertical outliners
+    list_ver_lines0 = prep.remove_residual_dots_ver(list_ver_lines0, ver_slope)
+
     title_lst = ['original image', 'binary image', 'segmented image']
 
     img_list = [top_slice, bi_img, s_img]
@@ -93,52 +98,54 @@ if __name__ == '__main__':
         ax.set_axis_off()
     plt.show()
     #
-    # (xcenter, ycenter) = proc.find_cod_coarse(list_hor_lines0, list_ver_lines0)
+    (xcenter, ycenter) = proc.find_cod_coarse(list_hor_lines0, list_ver_lines0)
+    (xcenter, ycenter) = proc.find_cod_fine(list_hor_lines0,list_ver_lines0,xcenter,
+                                            ycenter,dot_dist)
     #
     # # Calculate coefficients of the correction model
-    # coe_num = 3
-    # list_fact = proc.calc_coef_backward(list_hor_lines0, list_ver_lines0,
-    #                                     xcenter, ycenter, coe_num)
+    coe_num = 3
+    list_fact = proc.calc_coef_backward(list_hor_lines0, list_ver_lines0,
+                                        xcenter, ycenter, coe_num)
     #
-    # list_uhor_lines = post.unwarp_line_backward(list_hor_lines0, xcenter, ycenter,
-    #                                             list_fact)
+    list_uhor_lines = post.unwarp_line_backward(list_hor_lines0, xcenter, ycenter,
+                                                list_fact)
     #
-    # list_uver_lines = post.unwarp_line_backward(list_ver_lines0, xcenter, ycenter,
-    #                                             list_fact)
+    list_uver_lines = post.unwarp_line_backward(list_ver_lines0, xcenter, ycenter,
+                                                list_fact)
     #
-    # cs_img = post.unwarp_image_backward(s_img, xcenter, ycenter, list_fact)
-    #
-    # d_img = cs_img - s_img
-    # img_list1 = [s_img, cs_img, d_img]
-    # title_lst1 = ['original image', 'corrected image', 'difference image']
-    #
-    # fig, axs = plt.subplots(1, 3, figsize=(16, 9), constrained_layout=True)
-    # for n, (ax, image, title) in enumerate(zip(axs.flat, img_list1, title_lst1)):
-    #
-    #     ax.imshow(image, 'gray', vmin=np.min(image), vmax=np.max(image))
-    #     ax.set_title(title)
-    #     ax.set_axis_off()
-    #
-    # plt.show()
-    #
-    # fig, axs = plt.subplots(1, 2, figsize=(16, 9), constrained_layout=True)
-    # for n, (ax, image, title) in enumerate(zip(axs.flat, img_list1, title_lst1)):
-    #
-    #     if n == 0:
-    #         for (hline, vline) in zip(list_hor_lines0, list_ver_lines0):
-    #             ax.plot(hline[:, 1], hline[:, 0], '--o', markersize=1)
-    #             ax.plot(vline[:, 1], vline[:, 0], '--o', markersize=1)
-    #             # ax.imshow(s_img, 'gray')
-    #     else:
-    #         for (hline, vline) in zip(list_uhor_lines, list_uver_lines):
-    #             ax.plot(hline[:, 1], hline[:, 0], '--o', markersize=1)
-    #             ax.plot(vline[:, 1], vline[:, 0], '--o', markersize=1)
-    #             # ax.imshow(cs_img, 'gray')
-    #
-    #     ax.set_title(title)
-    #     # ax.set_axis_off()
-    #     ax.set_xlim(0,512)
-    #     ax.set_ylim(0,512)
-    #
-    # plt.show()
-    #
+    cs_img = post.unwarp_image_backward(s_img, xcenter, ycenter, list_fact)
+
+    d_img = cs_img - s_img
+    img_list1 = [s_img, cs_img, d_img]
+    title_lst1 = ['original image', 'corrected image', 'difference image']
+
+    fig, axs = plt.subplots(1, 3, figsize=(16, 9), constrained_layout=True)
+    for n, (ax, image, title) in enumerate(zip(axs.flat, img_list1, title_lst1)):
+
+        ax.imshow(image, 'gray', vmin=np.min(image), vmax=np.max(image))
+        ax.set_title(title)
+        ax.set_axis_off()
+
+    plt.show()
+
+    fig, axs = plt.subplots(1, 2, figsize=(16, 9), constrained_layout=True)
+    for n, (ax, image, title) in enumerate(zip(axs.flat, img_list1, title_lst1)):
+
+        if n == 0:
+            for (hline, vline) in zip(list_hor_lines0, list_ver_lines0):
+                ax.plot(hline[:, 1], hline[:, 0], '--o', markersize=1)
+                ax.plot(vline[:, 1], vline[:, 0], '--o', markersize=1)
+                # ax.imshow(s_img, 'gray')
+        else:
+            for (hline, vline) in zip(list_uhor_lines, list_uver_lines):
+                ax.plot(hline[:, 1], hline[:, 0], '--o', markersize=1)
+                ax.plot(vline[:, 1], vline[:, 0], '--o', markersize=1)
+                # ax.imshow(cs_img, 'gray')
+
+        ax.set_title(title)
+        # ax.set_axis_off()
+        ax.set_xlim(0,512)
+        ax.set_ylim(0,512)
+
+    plt.show()
+

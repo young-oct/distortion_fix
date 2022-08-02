@@ -20,6 +20,8 @@ from natsort import natsorted
 import discorpy.prep.preprocessing as prep
 import discorpy.proc.processing as proc
 import discorpy.post.postprocessing as post
+from skimage.morphology import disk, dilation, square, erosion, binary_erosion, binary_dilation, \
+    binary_closing, binary_opening, closing
 
 if __name__ == '__main__':
 

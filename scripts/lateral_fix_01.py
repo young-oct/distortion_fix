@@ -17,6 +17,8 @@ from skimage.morphology import (erosion, dilation, opening, closing,  # noqa
                                 white_tophat, disk, black_tophat, square, skeletonize)
 
 from natsort import natsorted
+from skimage.morphology import disk, dilation, square, erosion, binary_erosion, binary_dilation, \
+    binary_closing, binary_opening, closing
 import discorpy.prep.preprocessing as prep
 import discorpy.proc.processing as proc
 import discorpy.post.postprocessing as post
@@ -32,7 +34,7 @@ if __name__ == '__main__':
         }
     )
 
-    data_sets = natsorted(glob.glob('../data/2022.08.01/enhanced/*.oct'))
+    data_sets = natsorted(glob.glob('../data/2022.08.01/original/*.oct'))
 
     data = []
     for i in range(len(data_sets)):
@@ -41,42 +43,44 @@ if __name__ == '__main__':
     p_factor = 0.5
 
     # for i in range(len(data)):
-    #0: dot, 1: square, 2: circle
-    volume = data[0]
+    # 0: dot, 1: square, 2: circle
+    volume = data[-1]
 
     # access the frame index of where axial location of the checkerboard
     index = surface_index(volume)[-1][-1]
-    pad = 30
+    pad = 5
     stack = volume[:, :, int(index - pad):int(index)]
-
     top_slice = np.amax(stack, axis=2)
 
     # de-speckling for better feature extraction
-    top_slice = despecking(top_slice, sigma=1, size=1)
+    top_slice = despecking(top_slice, sigma=1, size=3)
     vmin, vmax = int(p_factor * 255), 255
 
     top_slice = np.where(top_slice <= vmin, vmin, top_slice)
     # create binary image of the top surface
-    bi_img = prep.binarization(top_slice)
+    bi_img = prep.normalization_fft(top_slice, sigma=5)
+    bi_img = prep.binarization(bi_img)
+    # bi_img = despecking(bi_img, sigma=5, size=3)
 
+    # bi_img = closing(bi_img, square(5))
     # Calculate the median dot size and distance between them.
 
     (dot_size, dot_dist) = prep.calc_size_distance(bi_img)
     # Remove non-dot objects
-    s_img = prep.select_dots_based_size(bi_img, dot_size,ratio=0.9)
-    s_img = prep.select_dots_based_ratio(s_img, ratio=0.9)
+    s_img = prep.select_dots_based_size(bi_img, dot_size, ratio=0.75)
+    s_img = prep.select_dots_based_ratio(s_img, ratio=0.75)
 
-    # img_list = [top_slice, bi_img, s_img]
+    img_list = [top_slice, bi_img, s_img]
     #
     # # Calculate the slopes of horizontal lines and vertical lines.
-
+    #
     hor_slope = prep.calc_hor_slope(s_img)
     ver_slope = prep.calc_ver_slope(s_img)
-
-    #Group points into lines
-    list_hor_lines0 = prep.group_dots_hor_lines(s_img, hor_slope, dot_dist, accepted_ratio=0.8)
-    list_ver_lines0 = prep.group_dots_ver_lines(s_img, ver_slope, dot_dist, accepted_ratio=0.8)
-
+    # #
+    # #Group points into lines
+    list_hor_lines0 = prep.group_dots_hor_lines(s_img, hor_slope, dot_dist, accepted_ratio=0.3, num_dot_miss=5)
+    list_ver_lines0 = prep.group_dots_ver_lines(s_img, ver_slope, dot_dist, accepted_ratio=0.3, num_dot_miss=5)
+    #
     # Optional: remove horizontal outliners
     list_hor_lines0 = prep.remove_residual_dots_hor(list_hor_lines0, hor_slope)
     # Optional: remove vertical outliners
@@ -101,7 +105,7 @@ if __name__ == '__main__':
     (xcenter, ycenter) = proc.find_cod_coarse(list_hor_lines0, list_ver_lines0)
     (xcenter, ycenter) = proc.find_cod_fine(list_hor_lines0,list_ver_lines0,xcenter,
                                             ycenter,dot_dist)
-    #
+    # #
     # # Calculate coefficients of the correction model
     coe_num = 3
     list_fact = proc.calc_coef_backward(list_hor_lines0, list_ver_lines0,
@@ -148,4 +152,3 @@ if __name__ == '__main__':
         ax.set_ylim(0,512)
 
     plt.show()
-

@@ -54,7 +54,7 @@ class circle_fit:
                                 linestyle='dashed', edgecolor='red',label='estimated circle')
         ax.add_patch(circle)
         ax.plot(self.origin[0], self.origin[1], marker='o', color='red', label='origin')
-        ax.set_title('radius = %.2f \n origin (x y) is \n %.2f %.2f' % (self.radius, self.origin[0], self.origin[1]))
+        ax.set_title('R: %.2f \n origin (x y): %.2f %.2f' % (self.radius, self.origin[0], self.origin[1]))
         ax.set_aspect('equal')
 
         return ax

@@ -9,50 +9,46 @@ from natsort import natsorted
 import numpy as np
 import matplotlib.pyplot as plt
 from tools.pre_proc import load_from_oct_file
-from tools.proc import surface_index, frame_index,\
-    filter_mask,circle_fit, slice_index
-from tools.pos_proc import heatmap,export_map
+from tools.proc import surface_index, frame_index, \
+    filter_mask, circle_fit, slice_index
+from tools.pos_proc import heatmap, export_map
 import pyransac3d as pyrsc
-from scipy.ndimage import median_filter,gaussian_filter
+from scipy.ndimage import median_filter, gaussian_filter
 import matplotlib
 
-# def plot_angle(ax, pos, angle, length=0.95, acol="C0", **kwargs):
-#     vec2 = np.array([np.cos(np.deg2rad(angle)), np.sin(np.deg2rad(angle))])
-#     xy = np.c_[[length, 0], [0, 0], vec2*length].T + np.array(pos)
-#     ax.plot(*xy.T, color=acol)
-#     return AngleAnnotation(pos, xy[0], xy[2], ax=ax, **kwargs)
 
 def angle_est(x, y, origin, radius, ax):
-    xmin_idx, xmax_idx = np.min(x), np.max(x)
+    xmin_idx, xmax_idx = np.argmin(x), np.argmax(x)
     ymin, ymax = y[xmin_idx], y[xmax_idx]
     xc, yc = origin[0], origin[1]
 
-    ax.plot(xmin_idx, ymin, color='green', label='x1', marker = '8', ms = 10)
-    ax.plot(xmax_idx, ymax, color='green', label='x2', marker = '8', ms = 10)
+    ax.plot(xmin_idx, ymin, color='green', label='x1', marker='8', ms=10)
+    ax.plot(xmax_idx, ymax, color='green', label='x2', marker='8', ms=10)
 
-    angle_1 = np.degrees(np.arcsin(abs(xc-xmin_idx)/radius))
-    angle_2 = np.degrees(np.arcsin(abs(xc-xmax_idx)/radius))
+    angle_1 = np.degrees(np.arcsin(abs(xc - xmin_idx) / radius))
+    angle_2 = np.degrees(np.arcsin(abs(xc - xmax_idx) / radius))
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
 
     textstr = '\n'.join((
-    r'$\theta_2=%.2f$' % (angle_1, ),
-    r'$\theta_2=%.2f$' % (angle_2, )))
+        r'$\theta_2=%.2f$' % (angle_1,),
+        r'$\theta_2=%.2f$' % (angle_2,)))
 
     ax.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=14,
             verticalalignment='top', bbox=props)
 
     ax.annotate('x1', xy=(xmin_idx, ymin), xycoords='data',
-                xytext=(xmin_idx - radius/4 , ymin + radius/4 ), textcoords='data',
+                xytext=(xmin_idx - radius / 4, ymin + radius / 4), textcoords='data',
                 arrowprops=dict(facecolor='black', shrink=0.05),
                 horizontalalignment='right', verticalalignment='top',
                 )
 
     ax.annotate('x2', xy=(xmax_idx, ymax), xycoords='data',
-                xytext=(xmax_idx + radius/4 , ymax + radius/4 ), textcoords='data',
+                xytext=(xmax_idx + radius / 4, ymax + radius / 4), textcoords='data',
                 arrowprops=dict(facecolor='black', shrink=0.05),
                 horizontalalignment='right', verticalalignment='top',
                 )
     return ax
+
 
 if __name__ == '__main__':
 
@@ -71,9 +67,8 @@ if __name__ == '__main__':
     p_factor = np.linspace(0.75, 0.8, len(data_sets))
     shift = 0
 
-
     for j in range(1):
-    # for j in range(len(data_sets)):
+        # for j in range(len(data_sets)):
         data = load_from_oct_file(data_sets[j], clean=False)
         vmin, vmax = int(p_factor[j] * 255), 255
 
@@ -85,11 +80,13 @@ if __name__ == '__main__':
 
         xz_pts = surface_index(xz_mask, shift)
 
-    fig = plt.figure(figsize=(16, 9))
+    fig = plt.figure(figsize=(16, 9), constrained_layout=True)
     idx = 256
-    ax = fig.add_subplot(121)
+    ax = fig.add_subplot(221)
 
+    # slc = xz_mask[idx, :, :].T
     slc = xz_mask[idx, :, :].T
+
     ax.imshow(slc, cmap='gray', vmin=vmin, vmax=vmax)
 
     xz_slc = slice_index(slc, shift)
@@ -97,7 +94,7 @@ if __name__ == '__main__':
     ax.plot(x, y, linewidth=5, alpha=0.8, color='r')
     ax.set_title('slice %d from the xz direction' % idx)
 
-    ax = fig.add_subplot(122)
+    ax = fig.add_subplot(222)
 
     # estimating circle of this slice
     est_cir = circle_fit(xz_slc)
@@ -107,14 +104,41 @@ if __name__ == '__main__':
     est_cir.plot(ax)
 
     ax.plot(x, y, linewidth=5, alpha=0.8, color='black', label='actual points')
-    angle_est(x,y,origin,radius,ax)
+    angle_est(x, y, origin, radius, ax)
 
     ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),
-              fancybox=True, shadow=True, ncol=3)
+              fancybox=True, shadow=True, ncol=5)
 
     scale = 1
-    ax.set_ylim(int((ax_lim + radius)*scale),-int((ax_lim + radius)*scale))
-    ax.set_xlim(-int((ax_lim + radius)*scale),int((ax_lim + radius)*scale))
+    ax.set_ylim(int((ax_lim + radius) * scale), -int((ax_lim + radius) * scale))
+    ax.set_xlim(-int((ax_lim + radius) * scale), int((ax_lim + radius) * scale))
 
-    plt.tight_layout()
+    ax = fig.add_subplot(223)
+    slc = xz_mask[:, idx, :].T
+
+    ax.imshow(slc, cmap='gray', vmin=vmin, vmax=vmax)
+
+    xz_slc = slice_index(slc, shift)
+    x, y = zip(*xz_slc)
+    ax.plot(x, y, linewidth=5, alpha=0.8, color='r')
+    ax.set_title('slice %d from the yz direction' % idx)
+
+    ax = fig.add_subplot(224)
+    # estimating circle of this slice
+    est_cir = circle_fit(xz_slc)
+    radius, origin = est_cir.radius, est_cir.origin
+    ax_lim = max(abs(origin[0]), abs(origin[1]))
+
+    est_cir.plot(ax)
+
+    ax.plot(x, y, linewidth=5, alpha=0.8, color='black', label='actual points')
+    angle_est(x, y, origin, radius, ax)
+
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),
+              fancybox=True, shadow=True, ncol=5)
+
+    ax.set_ylim(int((ax_lim + radius) * scale), -int((ax_lim + radius) * scale))
+    ax.set_xlim(-int((ax_lim + radius) * scale), int((ax_lim + radius) * scale))
+
+    # plt.tight_layout()
     plt.show()

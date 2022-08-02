@@ -428,3 +428,13 @@ def polar2cart(tri, xq, zq, values):
 def iniTri(polrcoordinate):
     '''initialize triangulation'''
     return Delaunay(polrcoordinate)
+
+def index_mid(input_list):
+    mid_pts = []
+    mid = float(len(input_list)) / 2
+    if mid % 2 != 0:
+        mid_pts.append(input_list[int(mid - 0.5)])
+    else:
+        mid_pts.append((input_list[int(mid)], input_list[int(mid - 1)]))
+
+    return np.mean(mid_pts)

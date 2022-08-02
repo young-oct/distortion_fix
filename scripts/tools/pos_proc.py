@@ -169,3 +169,5 @@ def oct_to_dicom(data, resolutionx, resolutiony,resolutionz,
         dss.append(ds)
         all_files_exist = all_files_exist and isfile(dicom_file)
     return all_files_exist
+
+

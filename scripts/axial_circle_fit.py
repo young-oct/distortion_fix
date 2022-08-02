@@ -10,55 +10,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tools.pre_proc import load_from_oct_file
 from tools.proc import surface_index, frame_index, \
-    filter_mask, circle_fit, slice_index
+    filter_mask, circle_fit, slice_index,index_mid
 from tools.pos_proc import heatmap, export_map
 import pyransac3d as pyrsc
 from scipy.ndimage import median_filter, gaussian_filter
 import matplotlib
-
-
-def index_mid(input_list):
-    mid_pts = []
-    mid = float(len(input_list)) / 2
-    if mid % 2 != 0:
-        mid_pts.append(input_list[int(mid - 0.5)])
-    else:
-        mid_pts.append((input_list[int(mid)], input_list[int(mid - 1)]))
-
-    return np.mean(mid_pts)
-
-
-def angle_est(x, y, origin, radius, ax):
-    xmin_idx, xmax_idx = np.argmin(x), np.argmax(x)
-    ymin, ymax = y[xmin_idx], y[xmax_idx]
-    xc, yc = origin[0], origin[1]
-
-    ax.plot(xmin_idx, ymin, color='green', label='x1', marker='8', ms=10)
-    ax.plot(xmax_idx, ymax, color='green', label='x2', marker='8', ms=10)
-
-    angle_1 = np.degrees(np.arcsin(abs(xc - xmin_idx) / radius))
-    angle_2 = np.degrees(np.arcsin(abs(xc - xmax_idx) / radius))
-    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-
-    textstr = '\n'.join((
-        r'$\theta_2=%.2f$' % (angle_1,),
-        r'$\theta_2=%.2f$' % (angle_2,)))
-
-    ax.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=14,
-            verticalalignment='top', bbox=props)
-
-    ax.annotate('x1', xy=(xmin_idx, ymin), xycoords='data',
-                xytext=(xmin_idx - radius / 4, ymin + radius / 4), textcoords='data',
-                arrowprops=dict(facecolor='black', shrink=0.05),
-                horizontalalignment='right', verticalalignment='top',
-                )
-
-    ax.annotate('x2', xy=(xmax_idx, ymax), xycoords='data',
-                xytext=(xmax_idx + radius / 4, ymax + radius / 4), textcoords='data',
-                arrowprops=dict(facecolor='black', shrink=0.05),
-                horizontalalignment='right', verticalalignment='top',
-                )
-    return ax
+from tools.plot import angle_est
 
 
 if __name__ == '__main__':
@@ -147,7 +104,9 @@ if __name__ == '__main__':
         est_cir = circle_fit(xz_slc)
         radius, origin = est_cir.radius, est_cir.origin
         ax_lim = max(abs(origin[0]), abs(origin[1]))
+        # kw = dict(size=75, unit="points", text=r"$60°$")
 
+        # am6 = plot_angle(ax, (2.0, 0), 60, textposition="inside", **kw)
         est_cir.plot(ax)
 
         ax.plot(x, y, linewidth=5, alpha=0.8, color='black', label='actual points')
@@ -159,16 +118,6 @@ if __name__ == '__main__':
         ax.set_ylim(int((ax_lim + radius) * scale), -int((ax_lim + radius) * scale))
         ax.set_xlim(-int((ax_lim + radius) * scale), int((ax_lim + radius) * scale))
 
-        # ideal_plane = pyrsc.Plane()
-        # pts = np.asarray(xz_pts)
-        #
-        # best_eq, _ = ideal_plane.fit(pts, 0.01)
-        # a, b, c, d = best_eq[0], best_eq[1], - best_eq[2], best_eq[3]
-        #
-        # xx, yy = np.meshgrid(np.arange(0, data.shape[1], 1), np.arange(0, data.shape[1], 1))
-        # z_ideal = (d - a * xx - b * yy) / c
-        # z_mean = np.mean(z_ideal)
-        # # plt.tight_layout()
         z_idx = np.mean((mid_pt_xz, mid_pt_yz))
 
         # alternative approach with fitting a plane

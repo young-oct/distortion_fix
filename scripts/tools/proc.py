@@ -10,6 +10,60 @@ from scipy.spatial import Delaunay
 from scipy.interpolate import LinearNDInterpolator
 import math
 from numba import jit
+import matplotlib.patches as patches
+
+class circle_fit:
+    def __init__(self, pts):
+        self.x, self.y = zip(*pts)
+
+        self.x = np.array(self.x)
+        self.y = np.array(self.y)
+
+        self.A = self.form_A()
+        self.B = self.form_B()
+
+        self.radius, self.origin = self.cal_sphere()
+
+    #
+    def form_A(self):
+        A = np.zeros((len(self.x), 3))
+        A[:, 0] = self.x
+        A[:, 1] = self.y
+        A[:, 2] = 1
+
+        return A
+
+    #
+    def form_B(self):
+        #   Assemble the f matrix
+        B = np.zeros((len(self.x), 1))
+        B[:, 0] = (self.x * self.x) + (self.y * self.y)
+        return B
+
+    #
+    #     #
+    def cal_sphere(self):
+        c, residules, _, _ = np.linalg.lstsq(self.A, self.B, rcond=None)
+
+        x, y = float(c[0] / 2), float(c[1] / 2)
+        origin = (x, y)
+        radius = np.sqrt(c[2] + x ** 2 + y ** 2)
+        #
+        return radius, origin
+
+    #
+    def plot(self, ax):
+
+        circle = patches.Circle(self.origin, self.radius,
+                                transform=ax.transData, fill=False,
+                                linestyle='solid', edgecolor='red')
+        ax.add_patch(circle)
+        ax.plot(self.origin[0], self.origin[1], marker='o', color='red')
+        ax.set_title('radius = %.2f \n origin (x y) is \n %.2f %.2f' % (self.radius, self.origin[0], self.origin[1]))
+        ax.set_aspect('equal')
+
+        return ax
+
 
 class sphere_fit:
     def __init__(self, pts, centre=None, fixed_origin=True):
@@ -251,7 +305,6 @@ def clean_removal(data, top=5, radius=230):
     return data
 
 
-
 def despecking(frame, sigma=0.8, size=3):
     """
     :param frame: 512x 330 or 330x512 oct b mode frame
@@ -297,12 +350,8 @@ def mip_stack(volume, index, thickness):
         return np.amax(volume[:, :, low_b::high_b], axis=2)
 
 
-
-
-
-
 @jit(nopython=True)
-def getPolarco(f_zmax = 1.7, degree =10.5):
+def getPolarco(f_zmax=1.7, degree=10.5):
     '''obtian correct polar coordinates from the distorted image
 
     since X and Y correction can be done independently with respect to Z,
@@ -315,7 +364,7 @@ def getPolarco(f_zmax = 1.7, degree =10.5):
     please see "Real-time correction of geometric distortion artifact
      in large-volume optical coherence tomography paper'''
 
-    i_dim, zdim, zmax = 512, 330, int(330 *f_zmax)
+    i_dim, zdim, zmax = 512, 330, int(330 * f_zmax)
 
     _iz = np.zeros((i_dim, zdim, 2))  # construct iz plane
     i0, z0 = int(i_dim / 2), zmax  # i0 is half of the i dimension
@@ -338,6 +387,7 @@ def getPolarco(f_zmax = 1.7, degree =10.5):
     _iz = _iz.reshape(i_dim * zdim, 2)
     return _iz
 
+
 @jit(nopython=True)
 def valueRemap(dis_image):
     """remap the data to match with the correct orientation"""
@@ -349,6 +399,7 @@ def valueRemap(dis_image):
             _v[i, z] = dis_image[i, -z]  # store the pixel date temporally and flip along the colume
             # axis
     return np.ravel(_v)
+
 
 def polar2cart(tri, xq, zq, values):
     values = valueRemap(values)
@@ -364,6 +415,7 @@ def polar2cart(tri, xq, zq, values):
 
     return np.fliplr(valueUpdate)
     # return valueUpdate
+
 
 def iniTri(polrcoordinate):
     '''initialize triangulation'''

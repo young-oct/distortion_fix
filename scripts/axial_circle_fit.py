@@ -27,6 +27,7 @@ def index_mid(input_list):
 
     return np.mean(mid_pts)
 
+
 def angle_est(x, y, origin, radius, ax):
     xmin_idx, xmax_idx = np.argmin(x), np.argmax(x)
     ymin, ymax = y[xmin_idx], y[xmax_idx]
@@ -168,7 +169,17 @@ if __name__ == '__main__':
         # z_ideal = (d - a * xx - b * yy) / c
         # z_mean = np.mean(z_ideal)
         # # plt.tight_layout()
-        z_idx = np.mean((mid_pt_xz,mid_pt_yz))
+        z_idx = np.mean((mid_pt_xz, mid_pt_yz))
+
+        # alternative approach with fitting a plane
+        # construct ideal plane
+
+        # method II
+        # ideal_plane = pyrsc.Plane()
+        # pts = np.asarray(xz_pts)
+        # best_eq, best_inliers = ideal_plane.fit(pts, 0.01)
+        #
+        # z_idx = - best_eq[3]
 
         fig.suptitle('index at %d plane' % z_idx)
 

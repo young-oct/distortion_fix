@@ -17,6 +17,16 @@ from scipy.ndimage import median_filter, gaussian_filter
 import matplotlib
 
 
+def index_mid(input_list):
+    mid_pts = []
+    mid = float(len(input_list)) / 2
+    if mid % 2 != 0:
+        mid_pts.append(input_list[int(mid - 0.5)])
+    else:
+        mid_pts.append((input_list[int(mid)], input_list[int(mid - 1)]))
+
+    return np.mean(mid_pts)
+
 def angle_est(x, y, origin, radius, ax):
     xmin_idx, xmax_idx = np.argmin(x), np.argmax(x)
     ymin, ymax = y[xmin_idx], y[xmax_idx]
@@ -67,78 +77,99 @@ if __name__ == '__main__':
     p_factor = np.linspace(0.75, 0.8, len(data_sets))
     shift = 0
 
-    for j in range(1):
+    for i in range(1):
         # for j in range(len(data_sets)):
-        data = load_from_oct_file(data_sets[j], clean=False)
-        vmin, vmax = int(p_factor[j] * 255), 255
+        data = load_from_oct_file(data_sets[i], clean=False)
+        vmin, vmax = int(p_factor[i] * 255), 255
 
         xz_mask = np.zeros_like(data)
 
         # perform points extraction in the xz direction
-        for i in range(data.shape[0]):
-            xz_mask[i, :, :] = filter_mask(data[i, :, :], vmin=vmin, vmax=vmax)
+        for j in range(data.shape[0]):
+            xz_mask[j, :, :] = filter_mask(data[i, :, :], vmin=vmin, vmax=vmax)
+        # perform points extraction in the yz direction
+        for k in range(data.shape[1]):
+            xz_mask[:, k, :] = filter_mask(data[:, k, :], vmin=vmin, vmax=vmax)
 
         xz_pts = surface_index(xz_mask, shift)
 
-    fig = plt.figure(figsize=(16, 9), constrained_layout=True)
-    idx = 256
-    ax = fig.add_subplot(221)
+        fig = plt.figure(figsize=(16, 9), constrained_layout=True)
+        idx = 256
+        ax = fig.add_subplot(221)
 
-    # slc = xz_mask[idx, :, :].T
-    slc = xz_mask[idx, :, :].T
+        slc = xz_mask[idx, :, :].T
 
-    ax.imshow(slc, cmap='gray', vmin=vmin, vmax=vmax)
+        ax.imshow(slc, cmap='gray', vmin=vmin, vmax=vmax)
 
-    xz_slc = slice_index(slc, shift)
-    x, y = zip(*xz_slc)
-    ax.plot(x, y, linewidth=5, alpha=0.8, color='r')
-    ax.set_title('slice %d from the xz direction' % idx)
+        xz_slc = slice_index(slc, shift)
+        x, y = zip(*xz_slc)
+        ax.plot(x, y, linewidth=2, alpha=0.8, color='r')
+        mid_pt_xz = index_mid(y)
+        ax.axhline(y=mid_pt_xz, color='yellow', linestyle='--', linewidth=1)
 
-    ax = fig.add_subplot(222)
+        ax.set_title('slice %d from the xz direction' % idx)
 
-    # estimating circle of this slice
-    est_cir = circle_fit(xz_slc)
-    radius, origin = est_cir.radius, est_cir.origin
-    ax_lim = max(abs(origin[0]), abs(origin[1]))
+        ax = fig.add_subplot(222)
 
-    est_cir.plot(ax)
+        # estimating circle of this slice
+        est_cir = circle_fit(xz_slc)
+        radius, origin = est_cir.radius, est_cir.origin
+        ax_lim = max(abs(origin[0]), abs(origin[1]))
 
-    ax.plot(x, y, linewidth=5, alpha=0.8, color='black', label='actual points')
-    angle_est(x, y, origin, radius, ax)
+        est_cir.plot(ax)
 
-    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),
-              fancybox=True, shadow=True, ncol=5)
+        ax.plot(x, y, linewidth=5, alpha=0.8, color='black', label='actual points')
+        angle_est(x, y, origin, radius, ax)
 
-    scale = 1
-    ax.set_ylim(int((ax_lim + radius) * scale), -int((ax_lim + radius) * scale))
-    ax.set_xlim(-int((ax_lim + radius) * scale), int((ax_lim + radius) * scale))
+        ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),
+                  fancybox=True, shadow=True, ncol=5)
 
-    ax = fig.add_subplot(223)
-    slc = xz_mask[:, idx, :].T
+        scale = 1
+        ax.set_ylim(int((ax_lim + radius) * scale), -int((ax_lim + radius) * scale))
+        ax.set_xlim(-int((ax_lim + radius) * scale), int((ax_lim + radius) * scale))
 
-    ax.imshow(slc, cmap='gray', vmin=vmin, vmax=vmax)
+        ax = fig.add_subplot(223)
+        slc = xz_mask[:, idx, :].T
 
-    xz_slc = slice_index(slc, shift)
-    x, y = zip(*xz_slc)
-    ax.plot(x, y, linewidth=5, alpha=0.8, color='r')
-    ax.set_title('slice %d from the yz direction' % idx)
+        ax.imshow(slc, cmap='gray', vmin=vmin, vmax=vmax)
 
-    ax = fig.add_subplot(224)
-    # estimating circle of this slice
-    est_cir = circle_fit(xz_slc)
-    radius, origin = est_cir.radius, est_cir.origin
-    ax_lim = max(abs(origin[0]), abs(origin[1]))
+        xz_slc = slice_index(slc, shift)
+        x, y = zip(*xz_slc)
+        ax.plot(x, y, linewidth=2, alpha=0.8, color='r')
+        mid_pt_yz = index_mid(y)
 
-    est_cir.plot(ax)
+        ax.axhline(y=mid_pt_yz, color='yellow', linestyle='--', linewidth=1)
+        ax.set_title('slice %d from the yz direction' % idx)
 
-    ax.plot(x, y, linewidth=5, alpha=0.8, color='black', label='actual points')
-    angle_est(x, y, origin, radius, ax)
+        ax = fig.add_subplot(224)
+        # estimating circle of this slice
+        est_cir = circle_fit(xz_slc)
+        radius, origin = est_cir.radius, est_cir.origin
+        ax_lim = max(abs(origin[0]), abs(origin[1]))
 
-    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),
-              fancybox=True, shadow=True, ncol=5)
+        est_cir.plot(ax)
 
-    ax.set_ylim(int((ax_lim + radius) * scale), -int((ax_lim + radius) * scale))
-    ax.set_xlim(-int((ax_lim + radius) * scale), int((ax_lim + radius) * scale))
+        ax.plot(x, y, linewidth=5, alpha=0.8, color='black', label='actual points')
+        angle_est(x, y, origin, radius, ax)
 
-    # plt.tight_layout()
-    plt.show()
+        ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),
+                  fancybox=True, shadow=True, ncol=5)
+
+        ax.set_ylim(int((ax_lim + radius) * scale), -int((ax_lim + radius) * scale))
+        ax.set_xlim(-int((ax_lim + radius) * scale), int((ax_lim + radius) * scale))
+
+        # ideal_plane = pyrsc.Plane()
+        # pts = np.asarray(xz_pts)
+        #
+        # best_eq, _ = ideal_plane.fit(pts, 0.01)
+        # a, b, c, d = best_eq[0], best_eq[1], - best_eq[2], best_eq[3]
+        #
+        # xx, yy = np.meshgrid(np.arange(0, data.shape[1], 1), np.arange(0, data.shape[1], 1))
+        # z_ideal = (d - a * xx - b * yy) / c
+        # z_mean = np.mean(z_ideal)
+        # # plt.tight_layout()
+        z_idx = np.mean((mid_pt_xz,mid_pt_yz))
+
+        fig.suptitle('index at %d plane' % z_idx)
+
+        plt.show()

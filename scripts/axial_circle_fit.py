@@ -9,15 +9,50 @@ from natsort import natsorted
 import numpy as np
 import matplotlib.pyplot as plt
 from tools.pre_proc import load_from_oct_file
-from tools.proc import surface_index, frame_index, plane_fit,\
-    filter_mask,circle_fit
+from tools.proc import surface_index, frame_index,\
+    filter_mask,circle_fit, slice_index
 from tools.pos_proc import heatmap,export_map
 import pyransac3d as pyrsc
-import os
-import cv2 as cv
 from scipy.ndimage import median_filter,gaussian_filter
 import matplotlib
-from skimage import feature
+
+# def plot_angle(ax, pos, angle, length=0.95, acol="C0", **kwargs):
+#     vec2 = np.array([np.cos(np.deg2rad(angle)), np.sin(np.deg2rad(angle))])
+#     xy = np.c_[[length, 0], [0, 0], vec2*length].T + np.array(pos)
+#     ax.plot(*xy.T, color=acol)
+#     return AngleAnnotation(pos, xy[0], xy[2], ax=ax, **kwargs)
+
+def angle_est(x, y, origin, radius, ax):
+    xmin_idx, xmax_idx = np.min(x), np.max(x)
+    ymin, ymax = y[xmin_idx], y[xmax_idx]
+    xc, yc = origin[0], origin[1]
+
+    ax.plot(xmin_idx, ymin, color='green', label='x1', marker = '8', ms = 10)
+    ax.plot(xmax_idx, ymax, color='green', label='x2', marker = '8', ms = 10)
+
+    angle_1 = np.degrees(np.arcsin(abs(xc-xmin_idx)/radius))
+    angle_2 = np.degrees(np.arcsin(abs(xc-xmax_idx)/radius))
+    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+
+    textstr = '\n'.join((
+    r'$\theta_2=%.2f$' % (angle_1, ),
+    r'$\theta_2=%.2f$' % (angle_2, )))
+
+    ax.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=14,
+            verticalalignment='top', bbox=props)
+
+    ax.annotate('x1', xy=(xmin_idx, ymin), xycoords='data',
+                xytext=(xmin_idx - radius/4 , ymin + radius/4 ), textcoords='data',
+                arrowprops=dict(facecolor='black', shrink=0.05),
+                horizontalalignment='right', verticalalignment='top',
+                )
+
+    ax.annotate('x2', xy=(xmax_idx, ymax), xycoords='data',
+                xytext=(xmax_idx + radius/4 , ymax + radius/4 ), textcoords='data',
+                arrowprops=dict(facecolor='black', shrink=0.05),
+                horizontalalignment='right', verticalalignment='top',
+                )
+    return ax
 
 if __name__ == '__main__':
 
@@ -36,9 +71,7 @@ if __name__ == '__main__':
     p_factor = np.linspace(0.75, 0.8, len(data_sets))
     shift = 0
 
-    dis_map = []
-    raw_dis_map = []
-    res_error = []
+
     for j in range(1):
     # for j in range(len(data_sets)):
         data = load_from_oct_file(data_sets[j], clean=False)
@@ -52,65 +85,36 @@ if __name__ == '__main__':
 
         xz_pts = surface_index(xz_mask, shift)
 
-        fig = plt.figure(figsize=(16, 9))
-        idx = 256
-        ax = fig.add_subplot(131)
-        ax.imshow(xz_mask[idx, :, :], cmap='gray', vmin=vmin, vmax=vmax)
+    fig = plt.figure(figsize=(16, 9))
+    idx = 256
+    ax = fig.add_subplot(121)
 
-        xz_slc = frame_index(xz_mask, 'x', idx, shift)
-        x, y = zip(*xz_slc)
-        ax.plot(y, x, linewidth=5, alpha=0.8, color='r')
-        ax.set_title('slice %d from the xz direction' % idx)
+    slc = xz_mask[idx, :, :].T
+    ax.imshow(slc, cmap='gray', vmin=vmin, vmax=vmax)
 
-        ax = fig.add_subplot(132)
-        # ax.imshow(xz_mask[idx, :, :], cmap='gray', vmin=vmin, vmax=vmax)
+    xz_slc = slice_index(slc, shift)
+    x, y = zip(*xz_slc)
+    ax.plot(x, y, linewidth=5, alpha=0.8, color='r')
+    ax.set_title('slice %d from the xz direction' % idx)
 
-        xz_slc = frame_index(xz_mask, 'x', idx, shift)
+    ax = fig.add_subplot(122)
 
-        # estimating circle of this slice
-        est_cir = circle_fit(xz_slc)
-        radius, origin = est_cir.radius, est_cir.origin
-        est_cir.plot(ax)
+    # estimating circle of this slice
+    est_cir = circle_fit(xz_slc)
+    radius, origin = est_cir.radius, est_cir.origin
+    ax_lim = max(abs(origin[0]), abs(origin[1]))
 
-        # x, y = zip(*xz_slc)
-        # ax.plot(y, x, linewidth=5, alpha=0.8, color='r')
-        # ax.set_title('slice %d from the xz direction' % idx)
+    est_cir.plot(ax)
 
-        ax = fig.add_subplot(133, projection='3d')
-        xp, yp, zp = zip(*xz_pts)
-        ax.scatter(xp, yp, zp, s=0.1, alpha=0.1, c='r')
-        ax.set_title('raw points cloud')
-        ax.set_xlabel('x')
-        ax.set_ylabel('y')
-        ax.set_zlabel('z')
-        ax.set_xlim([0, data.shape[0]])
-        ax.set_ylim([0, data.shape[1]])
-        ax.set_zlim([0, data.shape[2]])
+    ax.plot(x, y, linewidth=5, alpha=0.8, color='black', label='actual points')
+    angle_est(x,y,origin,radius,ax)
 
-        # construct ideal plane
-        ideal_plane = pyrsc.Plane()
-        pts = np.asarray(xz_pts)
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),
+              fancybox=True, shadow=True, ncol=3)
 
-        best_eq, best_inliers = ideal_plane.fit(pts, 0.01)
+    scale = 1
+    ax.set_ylim(int((ax_lim + radius)*scale),-int((ax_lim + radius)*scale))
+    ax.set_xlim(-int((ax_lim + radius)*scale),int((ax_lim + radius)*scale))
 
-        a, b, c, d = best_eq[0], best_eq[1], - best_eq[2], best_eq[3]
-
-        xx, yy = np.meshgrid(np.arange(0, data.shape[1], 1), np.arange(0, data.shape[1], 1))
-        z_ideal = (d - a * xx - b * yy) / c
-        z_mean = np.mean(z_ideal)
-
-        # obtained the raw point difference map
-        raw_map = np.zeros((512, 512))
-        for i in range(len(xz_pts)):
-            lb, hb = z_mean * 0.5, z_mean * 1.5
-            if lb <= xz_pts[i][2] <= hb:
-                raw_map[xz_pts[i][0], xz_pts[i][1]] = int(xz_pts[i][2] - z_mean)
-            else:
-                pass
-
-        raw_map = gaussian_filter(raw_map, sigma=4)
-
-        fig.suptitle('index at %d plane' % z_mean)
-
-        plt.tight_layout()
-        plt.show()
+    plt.tight_layout()
+    plt.show()

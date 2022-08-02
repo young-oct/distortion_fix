@@ -24,7 +24,6 @@ class circle_fit:
 
         self.radius, self.origin = self.cal_sphere()
 
-    #
     def form_A(self):
         A = np.zeros((len(self.x), 3))
         A[:, 0] = self.x
@@ -33,32 +32,28 @@ class circle_fit:
 
         return A
 
-    #
     def form_B(self):
         #   Assemble the f matrix
         B = np.zeros((len(self.x), 1))
         B[:, 0] = (self.x * self.x) + (self.y * self.y)
         return B
 
-    #
-    #     #
     def cal_sphere(self):
         c, residules, _, _ = np.linalg.lstsq(self.A, self.B, rcond=None)
 
         x, y = float(c[0] / 2), float(c[1] / 2)
-        origin = (x, y)
+        origin = (x,y)
         radius = np.sqrt(c[2] + x ** 2 + y ** 2)
         #
         return radius, origin
 
-    #
     def plot(self, ax):
 
         circle = patches.Circle(self.origin, self.radius,
                                 transform=ax.transData, fill=False,
-                                linestyle='solid', edgecolor='red')
+                                linestyle='dashed', edgecolor='red',label='estimated circle')
         ax.add_patch(circle)
-        ax.plot(self.origin[0], self.origin[1], marker='o', color='red')
+        ax.plot(self.origin[0], self.origin[1], marker='o', color='red', label='origin')
         ax.set_title('radius = %.2f \n origin (x y) is \n %.2f %.2f' % (self.radius, self.origin[0], self.origin[1]))
         ax.set_aspect('equal')
 
@@ -267,6 +262,19 @@ def frame_index(volume, dir, index, shift=0):
                 pass
     else:
         print('please enter the correct direction')
+    return peak_loc
+
+
+def slice_index(slice,shift=0):
+    peak_loc = []
+    for i in range(slice.shape[1]):
+        a_line = slice[:, i]
+        peaks = np.where(a_line == 255)
+        if len(peaks[0]) >= 1:
+            peak_loc.append((i, int(peaks[0][-1] - shift)))
+        else:
+            pass
+
     return peak_loc
 
 

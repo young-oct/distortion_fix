@@ -11,37 +11,6 @@ from os.path import isfile
 from pydicom.uid import generate_uid
 
 
-
-def heatmap(data, ax=None,
-            cbar_kw={}, cbarlabel="", **kwargs):
-    if not ax:
-        ax = plt.gca()
-
-    # Plot the heatmap
-    im = ax.imshow(data, **kwargs)
-
-    # Create colorbar
-    cbar = ax.figure.colorbar(im, ax=ax, **cbar_kw)
-    cbar.ax.set_ylabel(cbarlabel, rotation=-90, va="bottom")
-
-    # Let the horizontal axes labeling appear on top.
-    ax.tick_params(top=True, bottom=False,
-                   labeltop=True, labelbottom=False)
-
-    # Turn spines off and create white grid.
-    ax.spines[:].set_visible(False)
-    ax.set_axis_off()
-
-    ax.grid(which="minor", color="w", linestyle='-', linewidth=3)
-    ax.tick_params(which="minor", bottom=False, left=False)
-    ax.set_title('std: %.2f' % np.std(data), y=0, pad=-14)
-    ax.xaxis.set_label_position('top')
-    # ax.set_xlabel('std: %.2f' % np.std(data))
-    # ax.set_title('Manual y', y=1.0, pad=-14)
-
-    return im, cbar
-
-
 def export_map(coe_map, file_path):
     # export correction map
 

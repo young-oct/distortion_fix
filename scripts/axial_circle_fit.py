@@ -11,11 +11,11 @@ import matplotlib.pyplot as plt
 from tools.pre_proc import load_from_oct_file
 from tools.proc import surface_index, frame_index, \
     filter_mask, circle_fit, slice_index,index_mid
-from tools.pos_proc import heatmap, export_map
+from tools.pos_proc import export_map
 import pyransac3d as pyrsc
 from scipy.ndimage import median_filter, gaussian_filter
 import matplotlib
-from tools.plot import angle_est
+from tools.plot import angle_est,heatmap
 
 
 if __name__ == '__main__':

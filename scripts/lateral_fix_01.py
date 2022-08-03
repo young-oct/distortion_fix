@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from tools.pre_proc import load_from_oct_file
 from tools.proc import filter_mask, \
     surface_index, sphere_fit, frame_index, max_slice, despecking
-from tools.pos_proc import heatmap, export_map
+from tools.pos_proc import export_map
 
 import matplotlib
 from skimage.morphology import (erosion, dilation, opening, closing,  # noqa

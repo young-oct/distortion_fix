@@ -9,7 +9,6 @@ import pydicom
 from os.path import join
 from os.path import isfile
 from pydicom.uid import generate_uid
-from pre_proc import folder_creator
 
 def export_map(coe_map, file_path):
     # export correction map

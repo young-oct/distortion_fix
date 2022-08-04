@@ -94,7 +94,7 @@ def linear_fit_plot(line_list, ax, title):
 
     # ax.scatter(x, y,  marker = 'o', color = 'blue')
     ax.plot(x, poly1d_fn(x), linestyle = '--', color = 'red' )  # '--k'=black dashed line, 'yo' = yellow circle marker
-    ax.text(np.mean(x),np.mean(y), f'$y = {slope:.1f}x {intercept:+.1f}$', c = 'red')
+    ax.text(np.mean(x) * 1.2,np.mean(y) * 0.8, f'$y = {slope:.1f}x {intercept:+.1f}$', c = 'red')
     ax.set_xlabel('z index [pixels]')
     ax.set_ylabel('distance [pixels]')
     ax.set_title(title)

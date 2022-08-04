@@ -6,6 +6,7 @@
 
 import numpy as np
 import matplotlib as plt
+from .proc import index_mid
 
 def heatmap(data, ax=None,
             cbar_kw={}, cbarlabel="", **kwargs):
@@ -37,12 +38,20 @@ def heatmap(data, ax=None,
     return im, cbar
 
 def angle_est(x, y, origin, radius, ax):
-    xmin_idx, xmax_idx = np.argmin(x), np.argmax(x)
-    ymin, ymax = y[xmin_idx], y[xmax_idx]
+    xmin_idx, xmax_idx = x[0], x[-1]
+    ymin, ymax = y[0], y[-1]
     xc, yc = origin[0], origin[1]
 
-    ax.plot(xmin_idx, ymin, color='green', label='x1', marker='8', ms=10)
-    ax.plot(xmax_idx, ymax, color='green', label='x2', marker='8', ms=10)
+    x_mid = index_mid(x)
+    y_mid = index_mid(y)
+
+    x_line = [xc, x_mid]
+    y_line = [yc, y_mid]
+
+    ax.plot(xmin_idx, ymin, color='green', label='x1', marker='8', ms=5)
+    ax.plot(xmax_idx, ymax, color='blue', label='x2', marker='8', ms=5)
+    ax.plot(x_mid, y_mid, color='red', label='xc', marker='D', ms=5)
+    ax.plot(x_line, y_line, color='red', linestyle ='dashed', linewidth = 1)
 
     angle_1 = np.degrees(np.arcsin(abs(xc - xmin_idx) / radius))
     angle_2 = np.degrees(np.arcsin(abs(xc - xmax_idx) / radius))
@@ -55,16 +64,39 @@ def angle_est(x, y, origin, radius, ax):
     ax.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=14,
             verticalalignment='top', bbox=props)
 
-    ax.annotate('x1', xy=(xmin_idx, ymin), xycoords='data',
-                xytext=(xmin_idx - radius / 4, ymin + radius / 4), textcoords='data',
-                arrowprops=dict(facecolor='black', shrink=0.05),
-                horizontalalignment='right', verticalalignment='top',
-                )
+    # ax.annotate('x1', xy=(xmin_idx, ymin), xycoords='data',
+    #             xytext=(xmin_idx - radius / 4, ymin + radius / 4), textcoords='data',
+    #             arrowprops=dict(facecolor='black', shrink=0.05),
+    #             horizontalalignment='right', verticalalignment='top',
+    #             )
+    #
+    # ax.annotate('x2', xy=(xmax_idx, ymax), xycoords='data',
+    #             xytext=(xmax_idx + radius / 4, ymax + radius / 4), textcoords='data',
+    #             arrowprops=dict(facecolor='black', shrink=0.05),
+    #             horizontalalignment='right', verticalalignment='top',
+    #             )
+    #
+    # ax.annotate('xc', xy=(x_mid, y_mid), xycoords='data',
+    #             xytext=(x_mid + radius / 4, y_mid + radius / 4), textcoords='data',
+    #             arrowprops=dict(facecolor='black', shrink=0.05),
+    #             horizontalalignment='right', verticalalignment='top',
+    #             )
 
-    ax.annotate('x2', xy=(xmax_idx, ymax), xycoords='data',
-                xytext=(xmax_idx + radius / 4, ymax + radius / 4), textcoords='data',
-                arrowprops=dict(facecolor='black', shrink=0.05),
-                horizontalalignment='right', verticalalignment='top',
-                )
+    return ax
+
+def linear_fit_plot(line_list, ax, title):
+    x,y = zip(*line_list)
+    coef = np.polyfit(x, y, 1)
+    slope, intercept = coef[0], coef[1]
+    poly1d_fn = np.poly1d(coef)
+
+    ax.scatter(*zip(*line_list), c = 'blue', marker='o', s = 10 )
+
+    # ax.scatter(x, y,  marker = 'o', color = 'blue')
+    ax.plot(x, poly1d_fn(x), linestyle = '--', color = 'red' )  # '--k'=black dashed line, 'yo' = yellow circle marker
+    ax.text(np.mean(x),np.mean(y), f'$y = {slope:.1f}x {intercept:+.1f}$', c = 'red')
+    ax.set_xlabel('z index [pixels]')
+    ax.set_ylabel('distance [pixels]')
+    ax.set_title(title)
 
     return ax

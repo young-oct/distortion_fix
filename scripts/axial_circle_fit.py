@@ -11,11 +11,21 @@ import matplotlib.pyplot as plt
 from tools.pre_proc import load_from_oct_file
 from tools.proc import surface_index, frame_index, \
     filter_mask, circle_fit, slice_index,index_mid
-from tools.pos_proc import export_map
-import pyransac3d as pyrsc
-from scipy.ndimage import median_filter, gaussian_filter
 import matplotlib
-from tools.plot import angle_est,heatmap
+from tools.plot import angle_est, heatmap,linear_fit_plot
+
+
+
+def origin_distance(x, y, origin):
+
+    xc, yc = origin[0], origin[1]
+
+    x_mid = index_mid(x)
+    y_mid = index_mid(y)
+
+    dis = np.sqrt((yc - y_mid) ** 2 + (xc - x_mid) ** 2)
+
+    return dis
 
 
 if __name__ == '__main__':
@@ -35,7 +45,11 @@ if __name__ == '__main__':
     p_factor = np.linspace(0.75, 0.8, len(data_sets))
     shift = 0
 
-    for i in range(1):
+    xz_center_dis = []
+    yz_center_dis = []
+    # for i in range(2):
+
+    for i in range(len(data_sets)):
         # for j in range(len(data_sets)):
         data = load_from_oct_file(data_sets[i], clean=False)
         vmin, vmax = int(p_factor[i] * 255), 255
@@ -74,13 +88,18 @@ if __name__ == '__main__':
         radius, origin = est_cir.radius, est_cir.origin
         ax_lim = max(abs(origin[0]), abs(origin[1]))
 
+        # estimating the distance from origin to the middle
+        # point on the curve in the xz direction
+        xz_dis = origin_distance(x, y, origin)
+        xz_center_dis.append((mid_pt_xz, xz_dis))
+
         est_cir.plot(ax)
 
         ax.plot(x, y, linewidth=5, alpha=0.8, color='black', label='actual points')
         angle_est(x, y, origin, radius, ax)
 
-        ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),
-                  fancybox=True, shadow=True, ncol=5)
+        ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1),
+                  fancybox=True, shadow=True, ncol=3, labelspacing=0.05, fontsize = 10)
 
         scale = 1
         ax.set_ylim(int((ax_lim + radius) * scale), -int((ax_lim + radius) * scale))
@@ -109,11 +128,16 @@ if __name__ == '__main__':
         # am6 = plot_angle(ax, (2.0, 0), 60, textposition="inside", **kw)
         est_cir.plot(ax)
 
+        # estimating the distance from origin to the middle
+        # point on the curve in the xz direction
+        yz_dis = origin_distance(x, y, origin)
+        yz_center_dis.append((mid_pt_yz, yz_dis))
+
         ax.plot(x, y, linewidth=5, alpha=0.8, color='black', label='actual points')
         angle_est(x, y, origin, radius, ax)
 
-        ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),
-                  fancybox=True, shadow=True, ncol=5)
+        ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1),
+                  fancybox=True, shadow=True, ncol=3, labelspacing=0.05, fontsize = 10)
 
         ax.set_ylim(int((ax_lim + radius) * scale), -int((ax_lim + radius) * scale))
         ax.set_xlim(-int((ax_lim + radius) * scale), int((ax_lim + radius) * scale))
@@ -133,3 +157,15 @@ if __name__ == '__main__':
         fig.suptitle('index at %d plane' % z_idx)
 
         plt.show()
+        print('done with %d out of %d' % (int(i + 1), len(data_sets)))
+
+
+    fig,ax = plt.subplots(1, 2,figsize=(16, 9), constrained_layout=True)
+    linear_fit_plot(xz_center_dis,ax[0] ,'xz plane')
+    linear_fit_plot(yz_center_dis,ax[1] ,'yz plane')
+
+    fig.suptitle('2D extracted distance(origin to curve mid-point) versus z-depth')
+
+    plt.show()
+
+

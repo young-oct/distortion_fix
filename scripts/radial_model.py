@@ -54,6 +54,28 @@ def apply_radial_model(img, coefficient):
     return img_dis
 
 
+def map_index(img, xcenter, ycenter, list_fact):
+    (height, width) = img.shape
+    xu_list = np.arange(width) - xcenter
+    yu_list = np.arange(height) - ycenter
+    xu_mat, yu_mat = np.meshgrid(xu_list, yu_list)
+    ru_mat = np.sqrt(xu_mat ** 2 + yu_mat ** 2)
+    fact_mat = np.sum(np.asarray(
+        [factor * ru_mat ** i for i, factor in enumerate(list_fact)]), axis=0)
+    xd_mat = np.float32(np.clip(xcenter + fact_mat * xu_mat, 0, width - 1))
+    yd_mat = np.float32(np.clip(ycenter + fact_mat * yu_mat, 0, height - 1))
+    indices = np.vstack((np.ndarray.flatten(yd_mat), np.ndarray.flatten(xd_mat)))
+
+    c_img = map_coordinates(img, indices)
+    # normlzied to [0,1]
+    idx_map = np.interp(indices,
+                        (indices.min(),
+                        indices.max()),
+                        (0, 1)).astype(np.float64)
+
+    return c_img, idx_map
+
+
 if __name__ == '__main__':
 
     matplotlib.rcParams.update(
@@ -122,7 +144,7 @@ if __name__ == '__main__':
         ax.set_axis_off()
         if n == 1:
             for pts in list_points_hor_lines:
-                ax.plot(pts[1], pts[0], '--o', markersize=5, color = 'red')
+                ax.plot(pts[1], pts[0], '--o', markersize=5, color='red')
             for pts in list_points_ver_lines:
                 ax.plot(pts[1], pts[0], '--o', markersize=5, color='blue')
 
@@ -130,14 +152,12 @@ if __name__ == '__main__':
             pass
     plt.show()
 
-    #Group points into lines
+    # Group points into lines
     # Group points into lines
     list_hor_lines = prep.group_dots_hor_lines(list_points_hor_lines, slope_hor, dist_hor,
                                                ratio=0.1, num_dot_miss=2, accepted_ratio=0.8)
     list_ver_lines = prep.group_dots_ver_lines(list_points_ver_lines, slope_ver, dist_ver,
                                                ratio=0.1, num_dot_miss=2, accepted_ratio=0.8)
-
-
 
     list_hor_lines = prep.remove_residual_dots_hor(list_hor_lines, slope_hor, 2)
     list_ver_lines = prep.remove_residual_dots_ver(list_ver_lines, slope_ver, 2)
@@ -149,9 +169,9 @@ if __name__ == '__main__':
         if n == 1:
 
             for line in list_hor_lines:
-                ax.plot(line[:, 1], line[:,0], '--o', markersize=5)
+                ax.plot(line[:, 1], line[:, 0], '--o', markersize=5)
             for line in list_ver_lines:
-                ax.plot(line[:, 1], line[:,0], '--o', markersize=5)
+                ax.plot(line[:, 1], line[:, 0], '--o', markersize=5)
 
         else:
             pass
@@ -164,17 +184,20 @@ if __name__ == '__main__':
     (xcenter, ycenter) = proc.find_cod_coarse(list_hor_lines, list_ver_lines)
     # #
     # # # Calculate radial distortion coefficients
-    list_fact = proc.calc_coef_backward(list_hor_lines, list_ver_lines, xcenter,
-                                        ycenter, num_coef)
+    num_coef = 5
+    list_ffact, list_fact = proc.calc_coef_backward_from_forward(list_hor_lines, list_ver_lines,
+                                                                 xcenter, ycenter, 3)
+
+    # list_fact = proc.calc_coef_backward(list_hor_lines, list_ver_lines, xcenter,
+    #                                     ycenter, num_coef)
     # #
     list_uhor_lines = post.unwarp_line_backward(list_hor_lines, xcenter, ycenter, list_fact)
     list_uver_lines = post.unwarp_line_backward(list_ver_lines, xcenter, ycenter, list_fact)
     # #
     cor_img = post.unwarp_image_backward(dis_image, xcenter, ycenter, list_fact)
-    # #
-    #
-    img_list2 = [orginal, dis_image, cor_img]
-    title_lst2 = ['ground truth', 'applied known distortion image', 'corrected image']
+    for_img = post.unwarp_image_forward(orginal, xcenter, ycenter, list_ffact)
+    img_list2 = [orginal, dis_image, cor_img, for_img]
+    title_lst2 = ['ground truth', 'applied known distortion image', 'corrected image', 'forward']
     fig, axs = plt.subplots(1, len(title_lst2), figsize=(16, 9), constrained_layout=True)
     #
     for n, (ax, image, title) in enumerate(zip(axs.flat, img_list2, title_lst2)):
@@ -183,11 +206,11 @@ if __name__ == '__main__':
         if n == 1:
 
             for line in list_hor_lines:
-                ax.plot(line[:, 1], line[:,0], '--o', markersize=5)
+                ax.plot(line[:, 1], line[:, 0], '--o', markersize=5)
             for line in list_ver_lines:
-                ax.plot(line[:, 1], line[:,0], '--o', markersize=5)
+                ax.plot(line[:, 1], line[:, 0], '--o', markersize=5)
 
-        elif n== 2:
+        elif n == 2:
             for line in list_uhor_lines:
                 ax.plot(line[:, 1], line[:, 0], '--o', markersize=5)
             for line in list_uver_lines:
@@ -199,3 +222,11 @@ if __name__ == '__main__':
         ax.set_axis_off()
     #
     plt.show()
+
+    a, idx_map = map_index(dis_img, xcenter, ycenter, list_fact)
+    b = a.reshape(dis_img.shape)
+    plt.imshow(dis_img)
+    plt.show()
+    #
+    # mat = map_coordinates(dis_image, indices, order=1, mode='reflect')
+    # c = mat.reshape(xu_mat.shape)

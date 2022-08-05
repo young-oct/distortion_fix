@@ -98,25 +98,29 @@ if __name__ == '__main__':
     for i in range(len(data_sets)):
         data.append(load_from_oct_file(data_sets[i]))
 
-    p_factor = 0.4
+    p_factor = 0.1
 
     # for i in range(len(data)):
     volume = data[4]
 
     # access the frame index of where axial location of the checkerboard
     index = surface_index(volume)[-1][-1]
-    pad = 30
+    pad = 10
     stack = volume[:, :, int(index - pad ):int(index)]
 
     top_slice = np.amax(stack, axis=2)
 
     # de-speckling for better feature extraction
-    top_slice = despecking(top_slice, sigma=0.5, size=3)
+
+    # top_slice = despecking(top_slice, sigma=0.5, size=10)
+
+    bi_img = opening(top_slice, square(13))
+    bi_img = median_filter(bi_img, size= 5)
     vmin, vmax = int(p_factor * 255), 255
 
-    top_slice = np.where(top_slice <= vmin,vmin, top_slice)
+    bi_img = np.where(bi_img <= vmin,vmin, bi_img)
     # create binary image of the top surface
-    bi_img = prep.binarization(top_slice)
+    bi_img = prep.binarization(bi_img)
 
     bi_img = binary_dilation(bi_img,square(9, dtype=bool))
     top_slice = despecking(top_slice, sigma=1, size=10)
@@ -145,7 +149,7 @@ if __name__ == '__main__':
         ax.set_axis_off()
     plt.show()
 
-    CHECKERBOARD = (3, 3)
+    CHECKERBOARD = (3,3)
     criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
     # Creating vector to store vectors of 3D points for each checkerboard image
     objpoints = []
@@ -163,6 +167,7 @@ if __name__ == '__main__':
                                             cv.CALIB_CB_NORMALIZE_IMAGE)
     fig, ax = plt.subplots(1, 1, figsize=(16, 9),constrained_layout = True)
 
+    # print(ret)
     if ret == True:
 
         objpoints.append(objp)
@@ -175,17 +180,51 @@ if __name__ == '__main__':
         # plt.imshow(bi_img)
         # cv.drawChessboardCorners(gray, CHECKERBOARD, corners2, ret)
         for pts in corners2:
-            print(pts)
+            # print(pts)
             ax.plot(pts[:,0],pts[:,1] ,marker = 'o', ms = 10)
 
     #
-        # cv.drawChessboardCorners(bi_img, (5,5), corners2, ret)
+    #     # cv.drawChessboardCorners(bi_img, (5,5), corners2, ret)
     ax.imshow(bi_img)
     plt.show()
-
-    ret, mtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
-    newcameramtx, roi = cv.getOptimalNewCameraMatrix(mtx, dist, (512, 512), 1, (512, 512))
-
-    mapx, mapy = cv.initUndistortRectifyMap(mtx, dist, None, newcameramtx,(512, 512), 5)
-    dst = cv.remap(top_slice, mapx, mapy, cv.INTER_LINEAR)
-    # dst = cv.undistort(gray, mtx, dist, None, newcameramtx)
+    # #
+    # ret, mtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
+    #
+    # # ret, mtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
+    # # newcameramtx, roi = cv.getOptimalNewCameraMatrix(mtx, dist, (512, 512), 1, (512, 512))
+    # h, w = 512, 512
+    # newcameramtx, roi = cv.getOptimalNewCameraMatrix(mtx, dist, (w, h), 1, (w, h))
+    #
+    # mapx, mapy = cv.initUndistortRectifyMap(mtx, dist, None, newcameramtx, (w, h), 5)
+    # dst = cv.remap(top_slice, mapx, mapy, cv.INTER_LINEAR)
+    # plt.imshow(dst)
+    # plt.show()
+    #
+    # x, y = np.meshgrid(np.float32(np.arange(512)), np.float32(np.arange(512)))
+    # x_c, y_c = 256, 256
+    # x = x- x_c
+    # y = y - y_c
+    #
+    # k_1 = 0.2
+    # k_2 = 0.05
+    # # k_1, k_2,k_3 = dst[0], dst[1], dst[-1]
+    # radius = np.sqrt(x ** 2 + y ** 2)  # distance from the center of image
+    # # m_r = 1 + k_1 * radius ** 2 + k_2 * radius ** 4 + k_3 * radius ** 6
+    # m_r = 1 + k_1*radius + k_2*radius**2
+    # # apply the model
+    # x = x * m_r
+    # y = y * m_r
+    #
+    # # reset all the shifting
+    # x = x * x_c + x_c
+    # y = y * y_c + y_c
+    # import scipy
+    # distorted = scipy.ndimage.map_coordinates(gray, [y.ravel(), x.ravel()])
+    # img = distorted.reshape(gray.shape)
+    # plt.imshow(img)
+    # plt.show()
+    # # radial distortion model
+    #
+    # # mapx, mapy = cv.initUndistortRectifyMap(mtx, dist, None, newcameramtx,(512, 512), 5)
+    # # dst = cv.remap(top_slice, mapx, mapy, cv.INTER_LINEAR)
+    # # # dst = cv.undistort(gray, mtx, dist, None, newcameramtx)

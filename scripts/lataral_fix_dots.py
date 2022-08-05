@@ -4,11 +4,8 @@
 # @FileName: lataral_fix_dots.py
 # @Software: PyCharm
 
-
-
 import glob
 from matplotlib.patches import Circle
-
 import numpy as np
 import matplotlib.pyplot as plt
 from tools.pre_proc import load_from_oct_file

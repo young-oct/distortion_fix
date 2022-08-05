@@ -12,15 +12,17 @@ from os.path import join
 
 if __name__ == '__main__':
 
-    data_sets = natsorted(glob.glob('../data/comparsion/*.oct'))
-    data = load_from_oct_file(data_sets[-1])
+    # data_sets = natsorted(glob.glob('../data/comparsion/*.oct'))
+    data_sets = natsorted(glob.glob('/Users/youngwang/Desktop/corrected-datasets-v2/*.oct'))
+
+    data = load_from_oct_file(data_sets[2])
     #create dicom stacks for comparison
     dicom_path = join('../', 'data','validation dicom')
-    resolutionx, resolutiony, resolutionz = 0.026, 0.026, 0.030
+    resolutionx, resolutiony, resolutionz = 0.034, 0.034, 0.034
 
     folder_creator(dicom_path)
 
-    file_path = 'scale'
+    file_path = 'update'
     f_path = join(dicom_path,file_path)
     folder_creator(f_path)
 

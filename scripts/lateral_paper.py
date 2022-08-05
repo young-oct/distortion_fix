@@ -208,3 +208,13 @@ if __name__ == '__main__':
     c_img = post.unwarp_image_backward(top_slice, xcenter, ycenter, list_fact)
     ax[1].imshow(c_img)
     plt.show()
+
+
+    s_pts, t_pts = proc.generate_source_target_perspective_points(list_hor_lines,list_ver_lines)
+
+    for pt in s_pts:
+        plt.plot(pt[1], pt[0], '--o', markersize=5, color = 'red')
+    for pt in t_pts:
+        plt.plot(pt[1], pt[0], '--o', markersize=5, color = 'blue')
+    plt.imshow(top_slice, 'gray', vmin=vmin, vmax=vmax)
+    plt.show()

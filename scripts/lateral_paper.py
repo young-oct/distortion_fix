@@ -201,3 +201,10 @@ if __name__ == '__main__':
         plt.plot(line[:, 1], line[:, 0], '--o', markersize=5)
     plt.imshow(img, 'gray')
     plt.show()
+
+    fig, ax = plt.subplots(1,2, figsize = (16,9))
+    ax[0].imshow(top_slice)
+
+    c_img = post.unwarp_image_backward(top_slice, xcenter, ycenter, list_fact)
+    ax[1].imshow(c_img)
+    plt.show()

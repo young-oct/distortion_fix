@@ -33,8 +33,46 @@ from skimage.morphology import disk, dilation, square, erosion, binary_erosion, 
     binary_closing, binary_opening, closing
 from copy import deepcopy
 from skimage import feature
+from scipy.ndimage import map_coordinates
+
 from tools.pos_proc import convert
 
+def map_index(img, xcenter, ycenter, radial_list, perspective_list):
+
+    c1, c2, c3, c4, c5, c6, c7, c8 = perspective_list
+
+    (height, width) = img.shape
+    xu_list = np.arange(width) - xcenter
+    yu_list = np.arange(height) - ycenter
+    xu_mat, yu_mat = np.meshgrid(xu_list, yu_list)
+    ru_mat = np.sqrt(xu_mat ** 2 + yu_mat ** 2)
+
+    # apply radial model
+    fact_mat = np.sum(np.asarray(
+        [factor * ru_mat ** i for i, factor in enumerate(radial_list)]), axis=0)
+
+    # shift the distortion center
+    xd_mat = xcenter + fact_mat * xu_mat
+    yd_mat = ycenter + fact_mat * yu_mat
+
+    # apply  perspective model
+    mat_tmp = (c7 * xd_mat + c8 * yd_mat + 1.0)
+    xd_mat = (c1 * xd_mat + c2 * yd_mat + c3) / mat_tmp
+    yd_mat = (c4 * xd_mat + c5 * yd_mat + c6) / mat_tmp
+    xd_mat = np.float32(np.clip(xd_mat, 0, width - 1))
+    yd_mat = np.float32(np.clip(yd_mat, 0, height - 1))
+
+    indices = np.vstack((np.ndarray.flatten(yd_mat), np.ndarray.flatten(xd_mat)))
+
+    # map img to new indices
+    c_img = map_coordinates(img, indices).reshape(img.shape)
+    # index normalize to [0,1] for GPU texture
+    idx_map = np.interp(indices,
+                        (indices.min(),
+                        indices.max()),
+                        (0, 1)).astype(np.float64)
+
+    return c_img, idx_map
 
 if __name__ == '__main__':
 
@@ -160,7 +198,6 @@ if __name__ == '__main__':
 
     fig, axs = plt.subplots(2, 3, figsize=(16, 9), constrained_layout=True)
     for n, (ax, image, title) in enumerate(zip(axs.flat, img_list, title_list)):
-        print(n)
         ax.imshow(image, 'gray', vmin=np.mean(image)*0.9, vmax=np.max(image))
         ax.set_title(title)
         ax.set_axis_off()
@@ -189,3 +226,14 @@ if __name__ == '__main__':
             pass
     plt.show()
 
+    # check for the final wrapper function
+    c_img, idx_map = map_index(ori_img, xcenter, ycenter, list_fact, pers_coef)
+    img_list1 = [ori_img,c_img]
+    title_list1 = ['original en-face image', 'final correction']
+
+    fig, axs = plt.subplots(1, 2, figsize=(16, 9), constrained_layout=True)
+    for n, (ax, image, title) in enumerate(zip(axs.flat, img_list1, title_list1)):
+        ax.imshow(image, 'gray', vmin=np.mean(image)*0.9, vmax=np.max(image))
+        ax.set_title(title)
+        ax.set_axis_off()
+    plt.show()

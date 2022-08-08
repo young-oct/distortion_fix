@@ -70,7 +70,7 @@ def map_index(img, xcenter, ycenter, radial_list, perspective_list):
     idx_map = np.interp(indices,
                         (indices.min(),
                         indices.max()),
-                        (0, 1)).astype(np.float64)
+                        (0, 1)).astype(np.float32)
 
     return c_img, idx_map
 

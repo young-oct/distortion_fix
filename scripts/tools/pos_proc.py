@@ -6,13 +6,18 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pydicom
+import pickle
 from os.path import join
 from os.path import isfile
 from pydicom.uid import generate_uid
 
+def export_list(corr_list,file_path):
+    with open(file_path, 'wb') as f:
+        pickle.dump(corr_list, f)
+
+
 def export_map(coe_map, file_path):
     # export correction map
-
     # check if coe_map is 2D array
     assert coe_map.ndim == 2
 

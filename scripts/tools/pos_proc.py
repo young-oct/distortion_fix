@@ -15,10 +15,10 @@ def export_list(corr_list,file_path):
 
     assert len(corr_list) == 262144
     coe_map_len = np.uint32(len(corr_list))
+    corr_list.insert(0,coe_map_len)
 
     with open(file_path, 'wb') as f:
         pickle.dump(corr_list, f)
-        pickle.dump(coe_map_len, f)
 
     return None
 

@@ -6,6 +6,8 @@
 import copy
 
 import glob
+import pickle
+
 import numpy as np
 import matplotlib.pyplot as plt
 from tools.pre_proc import load_from_oct_file
@@ -61,13 +63,6 @@ def map_index(img, xcenter, ycenter, radial_list, perspective_list):
     # map img to new indices
     c_img = map_coordinates(img, indices).reshape(img.shape)
     # index normalize to [0,1] for GPU texture
-
-    # idx_map = np.interp(indices,
-    #                     (indices.min(),
-    #                     indices.max()),
-    #                     (0, 1)).astype(np.float32)
-
-    # idx_map = indices/512
 
     return c_img, idx_map
 
@@ -238,4 +233,7 @@ if __name__ == '__main__':
 
     bin_file = '../data/correction map/radial_correction.bin'
     export_list(idx_map, bin_file)
+
+    with open(bin_file, "rb") as f:
+        data = pickle.load(f)
 

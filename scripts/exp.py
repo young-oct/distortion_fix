@@ -34,6 +34,7 @@ from skimage.morphology import disk, dilation, square, erosion, binary_erosion, 
 from copy import deepcopy
 from skimage import feature
 from scipy.ndimage import map_coordinates
+from tools.pos_proc import export_map
 
 from tools.pos_proc import convert
 
@@ -67,10 +68,14 @@ def map_index(img, xcenter, ycenter, radial_list, perspective_list):
     # map img to new indices
     c_img = map_coordinates(img, indices).reshape(img.shape)
     # index normalize to [0,1] for GPU texture
-    idx_map = np.interp(indices,
-                        (indices.min(),
-                        indices.max()),
-                        (0, 1)).astype(np.float32)
+    idx_map = indices/img.shape[0]
+
+    # idx_map = np.interp(indices,
+    #                     (indices.min(),
+    #                     indices.max()),
+    #                     (0, 1)).astype(np.float32)
+
+    # idx_map = indices/512
 
     return c_img, idx_map
 
@@ -86,6 +91,7 @@ if __name__ == '__main__':
     )
 
     data_sets = natsorted(glob.glob('../data/1mW/1mm grid/*.oct'))
+
 
     data = []
     for i in range(len(data_sets)):
@@ -237,3 +243,6 @@ if __name__ == '__main__':
         ax.set_title(title)
         ax.set_axis_off()
     plt.show()
+
+    bin_file = '../data/correction map/radial_correction.bin'
+    export_map(idx_map,bin_file)

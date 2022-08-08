@@ -16,7 +16,7 @@ def export_map(coe_map, file_path):
     # check if coe_map is 2D array
     assert coe_map.ndim == 2
 
-    coe_map /= 512
+    # coe_map /= 512
     coe_map = coe_map.astype(np.float32)
     coe_map_size = np.uint32(coe_map.size)
 

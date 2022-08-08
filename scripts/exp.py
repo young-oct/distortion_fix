@@ -53,10 +53,14 @@ def map_index(img, xcenter, ycenter, radial_list, perspective_list):
 
     indices = np.vstack((np.ndarray.flatten(yd_mat), np.ndarray.flatten(xd_mat)))
 
+    xd_mat = xd_mat.flatten()/img.shape[0]
+    yd_mat = yd_mat.flatten()/img.shape[1]
+
+    idx_map = list(tuple(zip(xd_mat, yd_mat)))
+
     # map img to new indices
     c_img = map_coordinates(img, indices).reshape(img.shape)
     # index normalize to [0,1] for GPU texture
-    idx_map = indices/img.shape[0]
 
     # idx_map = np.interp(indices,
     #                     (indices.min(),
@@ -232,5 +236,6 @@ if __name__ == '__main__':
         ax.set_axis_off()
     plt.show()
 
-    bin_file = '../data/correction map/radial_correction.bin'
-    export_map(idx_map,bin_file)
+
+    # bin_file = '../data/correction map/radial_correction.bin'
+    # export_map(idx_map,bin_file)

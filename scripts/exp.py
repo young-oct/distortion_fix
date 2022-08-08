@@ -12,31 +12,19 @@ from tools.proc import filter_mask, \
     surface_index, sphere_fit, frame_index, max_slice, despecking
 from scipy.ndimage import gaussian_filter, median_filter
 from skimage import exposure
-from skimage import restoration
-import cv2 as cv
-from copy import deepcopy
-
-from skimage.feature import corner_harris, corner_subpix, corner_peaks
 import matplotlib
 from skimage.morphology import (erosion, dilation, opening, closing,  # noqa
                                 white_tophat, disk, black_tophat, square, skeletonize)
-
 from natsort import natsorted
-from skimage import feature
-from skimage import filters
-import discorpy.losa.loadersaver as io
 import discorpy.prep.preprocessing as prep
 import discorpy.prep.linepattern as lprep
 import discorpy.proc.processing as proc
 import discorpy.post.postprocessing as post
-from skimage.morphology import disk, dilation, square, erosion, binary_erosion, binary_dilation, \
-    binary_closing, binary_opening, closing
-from copy import deepcopy
+from skimage.morphology import square
 from skimage import feature
 from scipy.ndimage import map_coordinates
 from tools.pos_proc import export_map
 
-from tools.pos_proc import convert
 
 def map_index(img, xcenter, ycenter, radial_list, perspective_list):
 
@@ -97,12 +85,12 @@ if __name__ == '__main__':
     for i in range(len(data_sets)):
         data.append(load_from_oct_file(data_sets[i]))
 
-    p_factor = 0.65
+    p_factor = 0.8
     vmin, vmax = int(p_factor * 255), 255
     # pad axially on the accessed stack to avoid artifacts
 
     pad = 5
-    volume = data[0]
+    volume = data[-1]
     # access the frame index of where axial location of the checkerboard
     f_idx = max_slice(volume)
     # stack = volume[:, :, 0:int(f_idx + pad)]
@@ -231,7 +219,7 @@ if __name__ == '__main__':
         else:
             pass
     plt.show()
-
+    #
     # check for the final wrapper function
     c_img, idx_map = map_index(ori_img, xcenter, ycenter, list_fact, pers_coef)
     img_list1 = [ori_img,c_img]

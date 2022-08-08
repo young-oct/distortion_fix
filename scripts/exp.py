@@ -119,7 +119,7 @@ if __name__ == '__main__':
 
     temp_img = edge_img.astype(np.float64)
 
-    fig, ax = plt.subplots(1, 1, figsize=(16, 9))
+    # fig, ax = plt.subplots(1, 1, figsize=(16, 9))
     radius = 15
     ratio = 0.25
     sen = 0.015

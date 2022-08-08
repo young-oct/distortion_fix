@@ -26,25 +26,6 @@ from skimage import feature
 from scipy.ndimage import map_coordinates
 from tools.pos_proc import export_map,export_list
 
-
-def export_list(cordit_list, file_path):
-    # export correction map
-    # check if coe_map is 2D array
-    assert len(cordit_list) == 262144
-
-
-    coe_map_len = np.uint32(len(cordit_list))
-
-    with open(file_path, 'wb') as f:
-        pickle.dump(coe_map_len, f)
-        pickle.dump(cordit_list, f)
-
-    # Save correction maps to disk
-    # with open(file_path, 'wb') as f:
-    #     f.write(cordit_list_len)
-    #     f.write(cordit_list)
-    return None
-
 def map_index(img, xcenter, ycenter, radial_list, perspective_list):
 
     c1, c2, c3, c4, c5, c6, c7, c8 = perspective_list
@@ -257,9 +238,4 @@ if __name__ == '__main__':
 
     bin_file = '../data/correction map/radial_correction.bin'
     export_list(idx_map, bin_file)
-
-
-
-
-
 

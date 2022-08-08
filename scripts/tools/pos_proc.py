@@ -12,9 +12,15 @@ from os.path import isfile
 from pydicom.uid import generate_uid
 
 def export_list(corr_list,file_path):
+
+    assert len(corr_list) == 262144
+    coe_map_len = np.uint32(len(corr_list))
+
     with open(file_path, 'wb') as f:
         pickle.dump(corr_list, f)
+        pickle.dump(coe_map_len, f)
 
+    return None
 
 def export_map(coe_map, file_path):
     # export correction map

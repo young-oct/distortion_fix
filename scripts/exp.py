@@ -58,7 +58,9 @@ def map_index(img, xcenter, ycenter, radial_list, perspective_list):
     xd_mat = xd_mat.flatten()/img.shape[0]
     yd_mat = yd_mat.flatten()/img.shape[1]
 
-    idx_map = list(tuple(zip(xd_mat, yd_mat)))
+    idx_map = np.empty((xd_mat.size + yd_mat.size), dtype=xd_mat.dtype)
+    idx_map[0::2] = xd_mat
+    idx_map[1::2] = yd_mat
 
     # map img to new indices
     c_img = map_coordinates(img, indices).reshape(img.shape)
@@ -233,7 +235,3 @@ if __name__ == '__main__':
 
     bin_file = '../data/correction map/radial_correction.bin'
     export_list(idx_map, bin_file)
-
-    with open(bin_file, "rb") as f:
-        data = pickle.load(f)
-

@@ -13,14 +13,14 @@ from pydicom.uid import generate_uid
 
 def export_list(corr_list,file_path):
 
-    assert len(corr_list) == 262144
-    coe_map_len = np.uint32(len(corr_list))
+    idx_map_size = np.uint32(corr_list.size / 2)
     # corr_list.insert(0,coe_map_len)
 
     with open(file_path, 'wb') as f:
-        pickle.dump([coe_map_len, corr_list], f)
-
+        f.write(idx_map_size)
+        f.write(corr_list)
     return None
+
 
 def export_map(coe_map, file_path):
     # export correction map

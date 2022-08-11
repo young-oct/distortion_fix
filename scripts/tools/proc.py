@@ -3,6 +3,8 @@
 # @Author  : young wang
 # @FileName: proc.py
 # @Software: PyCharm
+from scipy.ndimage import map_coordinates
+
 from scipy.ndimage import gaussian_filter, median_filter
 import cv2 as cv
 import numpy as np
@@ -438,3 +440,43 @@ def index_mid(input_list):
         mid_pts.append((input_list[int(mid)], input_list[int(mid - 1)]))
 
     return np.mean(mid_pts)
+
+def map_index(img, xcenter, ycenter, radial_list, perspective_list):
+
+    c1, c2, c3, c4, c5, c6, c7, c8 = perspective_list
+
+    (height, width) = img.shape
+    xu_list = np.arange(width) - xcenter
+    yu_list = np.arange(height) - ycenter
+    xu_mat, yu_mat = np.meshgrid(xu_list, yu_list)
+    ru_mat = np.sqrt(xu_mat ** 2 + yu_mat ** 2)
+
+    # apply radial model
+    fact_mat = np.sum(np.asarray(
+        [factor * ru_mat ** i for i, factor in enumerate(radial_list)]), axis=0)
+
+    # shift the distortion center
+    xd_mat = xcenter + fact_mat * xu_mat
+    yd_mat = ycenter + fact_mat * yu_mat
+
+    # apply  perspective model
+    mat_tmp = (c7 * xd_mat + c8 * yd_mat + 1.0)
+    xd_mat = (c1 * xd_mat + c2 * yd_mat + c3) / mat_tmp
+    yd_mat = (c4 * xd_mat + c5 * yd_mat + c6) / mat_tmp
+    xd_mat = np.float32(np.clip(xd_mat, 0, width - 1))
+    yd_mat = np.float32(np.clip(yd_mat, 0, height - 1))
+
+    indices = np.vstack((np.ndarray.flatten(yd_mat), np.ndarray.flatten(xd_mat)))
+
+    xd_mat = xd_mat.flatten()/img.shape[0]
+    yd_mat = yd_mat.flatten()/img.shape[1]
+
+    idx_map = np.empty((xd_mat.size + yd_mat.size), dtype=xd_mat.dtype)
+    idx_map[0::2] = xd_mat
+    idx_map[1::2] = yd_mat
+
+    # map img to new indices
+    c_img = map_coordinates(img, indices).reshape(img.shape)
+    # index normalize to [0,1] for GPU texture
+
+    return c_img, idx_map

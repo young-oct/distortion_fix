@@ -48,7 +48,7 @@ if __name__ == '__main__':
     img_list.append(ori_oct)
     title_list.append('original en-face image')
 
-    data = plt.imread('../validation/checkerboard-lines-only-white-on-black.png')
+    data = plt.imread('../validation/checkerboard-overlay-clipped.png')
     ori_img = copy.deepcopy(data[:,:,0])
 
     temp_img = ori_img
@@ -57,10 +57,10 @@ if __name__ == '__main__':
 
     slope_hor, dist_hor = lprep.calc_slope_distance_hor_lines(ori_img,
                                                               search_range=15,
-                                                              ratio = 0.25, radius=20)
+                                                              ratio = 0.35, radius=20)
     slope_ver, dist_ver = lprep.calc_slope_distance_ver_lines(ori_img,
                                                               search_range=15,
-                                                              ratio = 0.25, radius=20)
+                                                              ratio = 0.35, radius=20)
 
     print(slope_hor,dist_hor)
     print(slope_ver,dist_ver)
@@ -69,12 +69,12 @@ if __name__ == '__main__':
     list_points_hor_lines = lprep.get_cross_points_hor_lines(ori_img, slope_ver, dist_ver,
                                                              ratio=1, norm=True, offset=0,
                                                              bgr='dark', radius=20,
-                                                             sensitive=0.1, denoise=True,
+                                                             sensitive=0.05, denoise=True,
                                                              subpixel=True)
     list_points_ver_lines = lprep.get_cross_points_ver_lines(ori_img, slope_hor, dist_hor,
                                                              ratio=1, norm=True, offset=0,
                                                              bgr='dark', radius=20,
-                                                             sensitive=0.1, denoise=True,
+                                                             sensitive=0.05, denoise=True,
                                                              subpixel=True)
 
     # backgroud = np.zeros(ori_img.shape)

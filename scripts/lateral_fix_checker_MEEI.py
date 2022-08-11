@@ -54,28 +54,27 @@ if __name__ == '__main__':
     temp_img = ori_img
     img_list.append(ori_img)
     title_list.append('segmented image')
-    #
-    radius = 20
-    ratio = 0.3
-    sen = 0.35
-    nosie_le = 0.5
 
-    slope_hor, dist_hor = lprep.calc_slope_distance_hor_lines(ori_img, radius=radius, sensitive=sen)
-    slope_ver, dist_ver = lprep.calc_slope_distance_ver_lines(ori_img, radius=radius, sensitive=sen)
+    slope_hor, dist_hor = lprep.calc_slope_distance_hor_lines(ori_img,
+                                                              search_range=15,
+                                                              ratio = 0.25, radius=20)
+    slope_ver, dist_ver = lprep.calc_slope_distance_ver_lines(ori_img,
+                                                              search_range=15,
+                                                              ratio = 0.25, radius=20)
 
     print(slope_hor,dist_hor)
     print(slope_ver,dist_ver)
 
     # # Extract reference-points
     list_points_hor_lines = lprep.get_cross_points_hor_lines(ori_img, slope_ver, dist_ver,
-                                                             ratio=ratio, norm=True, offset=0,
-                                                             bgr='dark', radius=radius,
-                                                             sensitive=nosie_le, denoise=True,
+                                                             ratio=1, norm=True, offset=0,
+                                                             bgr='dark', radius=20,
+                                                             sensitive=0.1, denoise=True,
                                                              subpixel=True)
     list_points_ver_lines = lprep.get_cross_points_ver_lines(ori_img, slope_hor, dist_hor,
-                                                             ratio=ratio, norm=True, offset=0,
-                                                             bgr='dark', radius=radius,
-                                                             sensitive=nosie_le, denoise=True,
+                                                             ratio=1, norm=True, offset=0,
+                                                             bgr='dark', radius=20,
+                                                             sensitive=0.1, denoise=True,
                                                              subpixel=True)
 
     # backgroud = np.zeros(ori_img.shape)
@@ -101,6 +100,7 @@ if __name__ == '__main__':
     num_coef = 5
     (xcenter, ycenter) = proc.find_cod_coarse(list_hor_lines1, list_ver_lines1)
     # # # # Calculate radial distortion coefficients
+
     list_fact = proc.calc_coef_backward(list_hor_lines1, list_ver_lines1, xcenter,
                                         ycenter, num_coef)
 
@@ -158,4 +158,5 @@ if __name__ == '__main__':
         else:
             pass
     plt.show()
+    print('done')
 

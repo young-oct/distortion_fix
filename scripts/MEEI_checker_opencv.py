@@ -88,3 +88,18 @@ if __name__ == '__main__':
     plt.tight_layout()
     plt.show()
 
+    ret, mtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints,
+                                                      imgpoints,
+                                                      im_bw.shape,
+                                                      None, None)
+
+    newcameramtx, roi = cv.getOptimalNewCameraMatrix(mtx, dist, (512,512), 1, (512,512))
+
+    mapx, mapy = cv.initUndistortRectifyMap(mtx, dist, None, newcameramtx, (512,512), 5)
+    dst = cv.remap(img, mapx, mapy, cv.INTER_LINEAR)
+
+    fig,ax = plt.subplots(1,1, figsize = (16,9))
+    ax.imshow(dst[:,:,0], 'gray', vmin=np.mean(dst)*0.9, vmax=np.max(dst))
+    ax.set_axis_off()
+    plt.tight_layout()
+    plt.show()

@@ -149,4 +149,12 @@ def oct_to_dicom(data, resolutionx, resolutiony,resolutionz,
         all_files_exist = all_files_exist and isfile(dicom_file)
     return all_files_exist
 
+def image_export(img, filename):
+    plt.axis("off")
+    fig = plt.imshow(img, 'gray', interpolation='nearest')
+    fig.axes.get_xaxis().set_visible(False)
+    fig.axes.get_yaxis().set_visible(False)
 
+    plt.savefig(filename, transparent=True,
+                bbox_inches='tight', pad_inches=0)
+    return None

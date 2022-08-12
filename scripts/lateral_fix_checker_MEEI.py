@@ -8,8 +8,9 @@ import glob
 import numpy as np
 import copy
 import matplotlib.pyplot as plt
+from tools.pos_proc import image_export
 from tools.pre_proc import load_from_oct_file
-from tools.proc import map_index,max_slice
+from tools.proc import map_index, max_slice
 import matplotlib
 from skimage.morphology import (erosion, dilation, opening, closing,  # noqa
                                 white_tophat, disk, black_tophat, square, skeletonize)
@@ -18,6 +19,7 @@ import discorpy.prep.preprocessing as prep
 import discorpy.prep.linepattern as lprep
 import discorpy.proc.processing as proc
 import discorpy.post.postprocessing as post
+
 
 if __name__ == '__main__':
 
@@ -49,7 +51,7 @@ if __name__ == '__main__':
     title_list.append('original en-face image')
 
     data = plt.imread('../validation/checkerboard-overlay-clipped.png')
-    ori_img = copy.deepcopy(data[:,:,0])
+    ori_img = copy.deepcopy(data[:, :, 0])
 
     temp_img = ori_img
     img_list.append(ori_img)
@@ -57,13 +59,13 @@ if __name__ == '__main__':
 
     slope_hor, dist_hor = lprep.calc_slope_distance_hor_lines(ori_img,
                                                               search_range=15,
-                                                              ratio = 0.35, radius=20)
+                                                              ratio=0.35, radius=20)
     slope_ver, dist_ver = lprep.calc_slope_distance_ver_lines(ori_img,
                                                               search_range=15,
-                                                              ratio = 0.35, radius=20)
+                                                              ratio=0.35, radius=20)
 
-    print(slope_hor,dist_hor)
-    print(slope_ver,dist_ver)
+    print(slope_hor, dist_hor)
+    print(slope_ver, dist_ver)
 
     # # Extract reference-points
     list_points_hor_lines = lprep.get_cross_points_hor_lines(ori_img, slope_ver, dist_ver,
@@ -81,7 +83,7 @@ if __name__ == '__main__':
     img_list.append(ori_oct)
     title_list.append('extracted features')
 
-    r1 ,ndm,acr= 0.3, 5, 0.5
+    r1, ndm, acr = 0.3, 5, 0.5
     list_hor_lines0 = prep.group_dots_hor_lines(list_points_hor_lines, slope_hor, dist_hor,
                                                 ratio=r1, num_dot_miss=ndm, accepted_ratio=acr)
     list_ver_lines0 = prep.group_dots_ver_lines(list_points_ver_lines, slope_ver, dist_ver,
@@ -133,7 +135,7 @@ if __name__ == '__main__':
     title_list.append('corrected OCT image')
     fig, axs = plt.subplots(2, 3, figsize=(16, 9), constrained_layout=True)
     for n, (ax, image, title) in enumerate(zip(axs.flat, img_list, title_list)):
-        ax.imshow(image, 'gray', vmin=np.mean(image)*0.9, vmax=np.max(image))
+        ax.imshow(image, 'gray', vmin=np.mean(image) * 0.9, vmax=np.max(image))
         ax.set_title(title)
         ax.set_axis_off()
 
@@ -144,19 +146,20 @@ if __name__ == '__main__':
                 ax.plot(line[:, 1], line[:, 0], '--o', markersize=4)
         elif n == 2:
             for line in list_hor_lines1:
-                ax.plot(line[:, 1], line[:, 0], linestyle= 'solid', markersize=4)
+                ax.plot(line[:, 1], line[:, 0], linestyle='solid', markersize=4)
             for line in list_ver_lines1:
                 ax.plot(line[:, 1], line[:, 0], linestyle='solid', markersize=4)
         elif n == 3:
             for pt in source_points:
-                ax.plot(pt[1], pt[0], 'o', markersize=3, color = 'red')
+                ax.plot(pt[1], pt[0], 'o', markersize=3, color='red')
 
         elif n == 5:
             for pt in target_points:
-                ax.plot(pt[1], pt[0], 'o', markersize=3, color = 'lawngreen')
+                ax.plot(pt[1], pt[0], 'o', markersize=3, color='lawngreen')
 
         else:
             pass
     plt.show()
     print('done')
 
+    image_export(ori_img,'/Users/youngwang/Desktop/distortion_fix/validation/target1.png')

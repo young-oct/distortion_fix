@@ -62,14 +62,14 @@ if __name__ == '__main__':
                         low = 2,
                         edge_radius = 235)
 
-    index_list = [0, 164, 229]
+    index_list = [0, 165, 229]
     title_list = ['top', 'middle', 'bottom']
 
     fig, axs = plt.subplots(1, len(index_list), figsize=(16, 9))
     for n, (ax, idx, title) in enumerate(zip(axs.flat, index_list, title_list)):
         temp = volume[:, :, idx]
         ax.imshow(temp, 'gray')
-        v_loc, h_loc = wall_index(temp, distance = 100, height = 0.4)
+        v_loc, h_loc = wall_index(temp, distance = 100, height = 0.6)
         vpts_list = ['pt1', 'pt2']
         hpts_list = ['pt3', 'pt4']
 
@@ -93,7 +93,7 @@ if __name__ == '__main__':
     depth_profile = []
     for i in range(volume.shape[-1]):
         temp = volume[:, :, i]
-        v_loc, h_loc = wall_index(temp, distance = 100, height = 0.4)
+        v_loc, h_loc = wall_index(temp, distance = 100, height = 0.6)
         depth_profile.append((i, v_loc, h_loc))
 
     pts1, pts2, pts3, pts4 = [], [], [], []
@@ -118,3 +118,4 @@ if __name__ == '__main__':
         ax.set_title(title)
     fig.suptitle('absolute distance map')
     plt.show()
+

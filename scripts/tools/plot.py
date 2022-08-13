@@ -37,18 +37,24 @@ def heatmap(data, ax=None,
 
     return im, cbar
 
-def line_fit(points, ax, order = 1):
+def line_fit_plot(points,l_txt, ax, order = 1):
     x, y = zip(*points)
     a, b = np.polyfit(x, y, order)
 
     x_range = np.arange(np.ptp(x))
 
     ax.scatter(x, y, color='purple')
+    ax.set_xlabel('z index')
+    ax.set_ylabel(str(l_txt))
+
     ax.plot(x_range, a * x_range + b, color='steelblue', linestyle='--', linewidth=2)
     ax.text(0.2, 0.2, 'y = ' + '{:.2f}'.format(b) + ' + {:.2f}'.format(a) + 'x',
             size=20, color = 'red', transform=ax.transAxes)
 
     return ax
+
+
+
 
 def angle_est(x, y, origin, radius, ax):
     xmin_idx, xmax_idx = x[0], x[-1]

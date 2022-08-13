@@ -499,16 +499,16 @@ def circle_cut(img,cut_ori = (256,256), inner_radius =40, edge_radius = 250):
                 pass
     return img
 
-def wall_index(img):
+def wall_index(img, distance = 80, height = 0.3 ):
     mid_index = int(img.shape[0]/2)
     v_loc, h_loc = [], []
     v_line = img[:, mid_index]
     h_line = img[mid_index,:]
 
-    pk_heights = np.max(img) * 0.3
+    pk_heights = np.max(img) * height
 
-    vpeaks, _ = find_peaks(v_line, distance=80, height = pk_heights)
-    hpeaks, _ = find_peaks(h_line, distance=80, height = pk_heights)
+    vpeaks, _ = find_peaks(v_line, distance=distance, height = pk_heights)
+    hpeaks, _ = find_peaks(h_line, distance=distance, height = pk_heights)
 
     if len(vpeaks) >=2 and len(hpeaks) >=2:
         v_loc.append((mid_index,vpeaks[0]))
@@ -521,3 +521,9 @@ def wall_index(img):
         pass
 
     return v_loc,h_loc
+
+def line_fit(points, order=1):
+    x, y = zip(*points)
+    a, b = np.polyfit(x, y, order)
+
+    return a, b

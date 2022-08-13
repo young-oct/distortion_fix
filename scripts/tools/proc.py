@@ -4,6 +4,7 @@
 # @FileName: proc.py
 # @Software: PyCharm
 from scipy.ndimage import map_coordinates
+from scipy.signal import find_peaks
 
 from scipy.ndimage import gaussian_filter, median_filter
 import cv2 as cv
@@ -480,3 +481,43 @@ def map_index(img, xcenter, ycenter, radial_list, perspective_list):
     # index normalize to [0,1] for GPU texture
 
     return c_img, idx_map
+
+def circle_cut(img,cut_ori = (256,256), inner_radius =40, edge_radius = 250):
+    x, y = cut_ori
+
+    for i in range(img.shape[0]):
+        for j in range(img.shape[1]):
+
+            radius = np.sqrt((i-x) ** 2 + (j-y) ** 2)
+
+            inner_criteria = radius - inner_radius
+            edge_criteria = radius - edge_radius
+
+            if inner_criteria < 0 or edge_criteria > 0:
+                img[i,j] = 0
+            else:
+                pass
+    return img
+
+def wall_index(img):
+    mid_index = int(img.shape[0]/2)
+    v_loc, h_loc = [], []
+    v_line = img[:, mid_index]
+    h_line = img[mid_index,:]
+
+    pk_heights = np.max(img) * 0.3
+
+    vpeaks, _ = find_peaks(v_line, distance=80, height = pk_heights)
+    hpeaks, _ = find_peaks(h_line, distance=80, height = pk_heights)
+
+    if len(vpeaks) >=2 and len(hpeaks) >=2:
+        v_loc.append((mid_index,vpeaks[0]))
+        v_loc.append((mid_index,vpeaks[-1]))
+
+        h_loc.append((hpeaks[0],mid_index))
+        h_loc.append((hpeaks[-1],mid_index))
+
+    else:
+        pass
+
+    return v_loc,h_loc

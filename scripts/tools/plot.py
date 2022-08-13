@@ -48,13 +48,10 @@ def line_fit_plot(points,l_txt, ax, order = 1):
     ax.set_ylabel(str(l_txt))
 
     ax.plot(x_range, a * x_range + b, color='steelblue', linestyle='--', linewidth=2)
-    ax.text(0.2, 0.2, 'y = ' + '{:.2f}'.format(b) + ' + {:.2f}'.format(a) + 'x',
+    ax.text(0.3, 0.15, 'y = ' + '{:.2f}'.format(b) + ' + {:.2f}'.format(a) + 'x',
             size=20, color = 'red', transform=ax.transAxes)
 
     return ax
-
-
-
 
 def angle_est(x, y, origin, radius, ax):
     xmin_idx, xmax_idx = x[0], x[-1]

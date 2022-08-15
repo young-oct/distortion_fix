@@ -86,7 +86,7 @@ def pre_volume(volume,low = 2, inner_radius=50, edge_radius = 240):
     c_volume = circle_cut(volume,
                             inner_radius=inner_radius,
                             edge_radius=edge_radius)
-    
+
     for i in range(volume.shape[-1]):
         temp_slice = c_volume[:, :, i]
 

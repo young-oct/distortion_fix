@@ -119,11 +119,12 @@ if __name__ == '__main__':
 
         pt1_rel,pt2_rel,pt3_rel,pt4_rel = [], [],[],[]
 
-        pt1_ref = pts1[0][-1]
-        pt2_ref = pts2[0][-1]
+        ref_idex = 0
+        pt1_ref = pts1[ref_idex][-1]
+        pt2_ref = pts2[ref_idex][-1]
 
-        pt3_ref = pts3[0][-1]
-        pt4_ref = pts4[0][-1]
+        pt3_ref = pts3[ref_idex][-1]
+        pt4_ref = pts4[ref_idex][-1]
 
         for i in range(len(pts1)):
             pt1_rel.append((i, np.abs(pts1[i][-1] - pt1_ref)))
@@ -140,8 +141,18 @@ if __name__ == '__main__':
         plt.tight_layout()
         plt.show()
 
-        print(len(pts1) / e_vol.shape[-1])
+        print(fig_name + ':'+ str(100*len(pts1) / e_vol.shape[-1]) + '% of z direction')
 
     end = time.perf_counter()
     print("Elapsed (after compilation) = %.2fs" % (end - start))
+
+    img_list = [dataset[0][256,:,:],dataset[-1][256,:,:]]
+    img_tit_lst = ['before correction', 'geometric correction']
+    fig, axs = plt.subplots(1, 2, figsize=(16, 9),constrained_layout=True)
+    for n, (ax, img, title) in enumerate(zip(axs.flat, img_list, img_tit_lst)):
+        ax.imshow(np.rot90(img), 'gray', vmin = 0.6* np.max(img), vmax =  np.max(img))
+        ax.set_title(title)
+        ax.set_axis_off()
+    fig.suptitle('cross section comparison')
+    plt.show()
 

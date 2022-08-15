@@ -83,21 +83,25 @@ def pre_volume(volume,low = 2, inner_radius=50, edge_radius = 240):
     new_volume = np.zeros_like(volume)
     p_factor = np.mean(volume)/np.max(volume)
     vmin, vmax = int(p_factor * 255), 255
+    c_volume = circle_cut(volume,
+                            inner_radius=inner_radius,
+                            edge_radius=edge_radius)
+    c_volume = np.where(c_volume <= vmin, vmin, c_volume)
 
     for i in range(volume.shape[-1]):
-        temp_slice = volume[:, :, i]
-        temp_slice = circle_cut(temp_slice,
-                                inner_radius = inner_radius,
-                                edge_radius= edge_radius)
+        temp_slice = c_volume[:, :, i]
+        # temp_slice = circle_cut(temp_slice,
+        #                         inner_radius = inner_radius,
+        #                         edge_radius= edge_radius)
 
         temp = despecking(temp_slice, sigma=2, size=5)
-        temp_slice = np.where(temp <= vmin, vmin, temp)
+        # temp_slice = np.where(temp <= vmin, vmin, temp)
 
-        low_p, high_p = np.percentile(temp_slice, (low, high))
-        temp = exposure.rescale_intensity(temp_slice,
+        low_p, high_p = np.percentile(temp, (low, high))
+        temp_slice = exposure.rescale_intensity(temp,
                                           in_range=(low_p, high_p))
-        temp = closing(temp, diamond(20))
-        new_volume[:, :, i] = temp
+        # temp = closing(temp_slice, diamond(20))
+        new_volume[:, :, i] = closing(temp_slice, diamond(20))
 
     new_volume = np.where(new_volume < np.mean(new_volume), 0, 255)
 

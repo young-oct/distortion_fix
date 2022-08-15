@@ -519,20 +519,18 @@ def circle_cut(vol: float,cut_ori = (256,256), inner_radius =40, edge_radius = 2
     x, y = cut_ori
 
     assert vol.ndim == 3
-    c_vol = np.zeros_like(vol)
 
     for i in range(vol.shape[-1]):
-        img = vol[:,:,i]
-        for j in range(img.shape[0]):
-            for k in range(img.shape[1]):
-                radius = np.sqrt((i-x) ** 2 + (j-y) ** 2)
+        for j in range(vol.shape[0]):
+            for k in range(vol.shape[1]):
+                radius = np.sqrt((j-x) ** 2 + (k-y) ** 2)
 
                 inner_criteria = radius - inner_radius
                 edge_criteria = radius - edge_radius
 
                 if inner_criteria < 0 or edge_criteria > 0:
-                    img[i,j] = 0
+                    vol[j,k,i] = 0
                 else:
                     pass
-        c_vol[:, :, i] = img
-    return c_vol
+    return vol
+

@@ -90,9 +90,6 @@ def pre_volume(volume,low = 2, inner_radius=50, edge_radius = 240):
 
     for i in range(volume.shape[-1]):
         temp_slice = c_volume[:, :, i]
-        # temp_slice = circle_cut(temp_slice,
-        #                         inner_radius = inner_radius,
-        #                         edge_radius= edge_radius)
 
         temp = despecking(temp_slice, sigma=2, size=5)
         # temp_slice = np.where(temp <= vmin, vmin, temp)
@@ -100,7 +97,6 @@ def pre_volume(volume,low = 2, inner_radius=50, edge_radius = 240):
         low_p, high_p = np.percentile(temp, (low, high))
         temp_slice = exposure.rescale_intensity(temp,
                                           in_range=(low_p, high_p))
-        # temp = closing(temp_slice, diamond(20))
         new_volume[:, :, i] = closing(temp_slice, diamond(20))
 
     new_volume = np.where(new_volume < np.mean(new_volume), 0, 255)
@@ -130,11 +126,11 @@ def obtain_inner_edge(volume):
         contours = measure.find_contours(c_slice)
         #1 is the inner edge, 0 is the outer edge
         edge_arr = np.zeros_like(c_slice)
-        try:
-            for j in range(len(contours[1]) - 1):
+        if len(contours) > 1:
+            for j in range(len(contours[1])):
                 x, y = contours[1][j]
                 edge_arr[int(x), int(y)] = 255
-        except:
+        else:
             pass
 
         iedge_volume[:,:,i] = edge_arr

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2022-08-13 15:03
 # @Author  : young wang
-# @FileName: FOV_square_enhance.py
+# @FileName: FOV_circle.py
 # @Software: PyCharm
 
 from tools.proc import despecking
@@ -18,29 +18,55 @@ from tools.proc import line_fit
 from skimage.morphology import closing,disk
 from natsort import natsorted
 
-def pre_volume(volume, p_factor = 0.55, low = 2, edge_radius = 240):
+# def pre_volume(volume, p_factor = 0.55, low = 2, edge_radius = 240):
+#     high = 100 - low
+#     new_volume = np.zeros(volume.shape)
+#     vmin, vmax = int(p_factor * 255), 255
+#
+#     for i in range(volume.shape[-1]):
+#         temp_slice = volume[:, :, i]
+#         temp_slice = circle_cut(temp_slice, inner_radius=40, edge_radius= edge_radius)
+#
+#         temp = despecking(temp_slice, sigma=3, size=5)
+#         temp_slice = np.where(temp < vmin, vmin, temp)
+#
+#         temp_slice = median_filter(temp_slice, size=5)
+#         temp_slice = closing(temp_slice, disk(5))
+#
+#         low_p, high_p = np.percentile(temp_slice, (low, high))
+#         temp = exposure.rescale_intensity(temp_slice,
+#                                           in_range=(low_p, high_p))
+#
+#         new_volume[:, :, i] = median_filter(temp, size=5)
+#
+#     return convert(new_volume, 0, 255, np.float64)
+
+def pre_volume(volume,low = 2, inner_radius=50, edge_radius = 240):
     high = 100 - low
     new_volume = np.zeros(volume.shape)
+    p_factor = np.median(data)/np.max(data)
     vmin, vmax = int(p_factor * 255), 255
 
     for i in range(volume.shape[-1]):
         temp_slice = volume[:, :, i]
-        temp_slice = circle_cut(temp_slice, inner_radius=40, edge_radius= edge_radius)
+        temp_slice = circle_cut(temp_slice,
+                                inner_radius=inner_radius,
+                                edge_radius= edge_radius)
 
-        temp = despecking(temp_slice, sigma=3, size=5)
+        temp = despecking(temp_slice, sigma=3, size=15)
         temp_slice = np.where(temp < vmin, vmin, temp)
 
-        temp_slice = median_filter(temp_slice, size=5)
         temp_slice = closing(temp_slice, disk(5))
 
         low_p, high_p = np.percentile(temp_slice, (low, high))
         temp = exposure.rescale_intensity(temp_slice,
                                           in_range=(low_p, high_p))
 
-        new_volume[:, :, i] = median_filter(temp, size=5)
+        new_volume[:, :, i] = temp
+
+    new_volume = np.where(new_volume < np.mean(new_volume), 0, 255)
 
     return convert(new_volume, 0, 255, np.float64)
-
 
 if __name__ == '__main__':
 
@@ -53,12 +79,11 @@ if __name__ == '__main__':
         }
     )
 
-    data_sets = natsorted(glob.glob('../data/MEEI/FOV/circle/original/*.oct'))
+    data_sets = natsorted(glob.glob('../data/MEEI/FOV/circle/raw/original/*.oct'))
     for k in range(len(data_sets)):
         data = load_from_oct_file(data_sets[k])
-        volume = pre_volume(data, p_factor=0.55,
-                            low = 2,
-                            edge_radius = 235)
+        volume = pre_volume(data, low=2, inner_radius=50,
+                            edge_radius=230)
 
         index_list = [0, 165, 229]
         title_list = ['top', 'middle', 'bottom']

@@ -482,7 +482,7 @@ def map_index(img, xcenter, ycenter, radial_list, perspective_list):
 
     return c_img, idx_map
 
-def circle_cut(img,cut_ori = (256,256), inner_radius =40, edge_radius = 250):
+def circle_cut(img: float,cut_ori = (256,256), inner_radius =40, edge_radius = 250) -> float:
     x, y = cut_ori
 
     for i in range(img.shape[0]):

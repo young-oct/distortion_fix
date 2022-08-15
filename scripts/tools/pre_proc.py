@@ -96,9 +96,10 @@ def pre_volume(volume,low = 2, inner_radius=50, edge_radius = 240):
         low_p, high_p = np.percentile(temp_slice, (low, high))
         temp_slice = exposure.rescale_intensity(temp_slice,
                                           in_range=(low_p, high_p))
-        new_volume[:, :, i] = closing(temp_slice, diamond(20))
+        temp = closing(temp_slice, diamond(20))
+        temp = np.where(temp < np.mean(temp), 0, 255)
 
-    new_volume = np.where(new_volume < np.mean(new_volume), 0, 255)
+        new_volume[:, :, i] = temp
 
     return convert(new_volume, 0, 255, np.float64)
 

@@ -28,7 +28,8 @@ if __name__ == '__main__':
         }
     )
 
-    data_sets = natsorted(glob.glob('../data/MEEI/FOV/square/original/*.oct'))
+    # data_sets = natsorted(glob.glob('../data/MEEI/FOV/square/original/*.oct'))
+    data_sets = natsorted(glob.glob('../data/MEEI/FOV/circle/raw/original/*.oct'))
 
     data = load_from_oct_file(data_sets[-1])
     start = time.perf_counter()

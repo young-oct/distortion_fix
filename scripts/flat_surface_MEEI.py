@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# @Time    : 2022-07-18 11:43
+# @Time    : 2022-08-15 14:29
 # @Author  : young wang
-# @FileName: flat_surface.py
+# @FileName: flat_surface_MEEI.py
 # @Software: PyCharm
 
 import glob
@@ -13,11 +13,10 @@ from tools.proc import filter_mask,surface_index,sphere_fit,frame_index
 
 if __name__ == '__main__':
 
-    # data_sets = natsorted(glob.glob('../data/1mW/flat surface/*.oct'))
     data_sets = natsorted(glob.glob('../data/MEEI/flat_surface/*.oct'))
 
     data = load_from_oct_file(data_sets[-1], clean=False)
-    p_factor = 0.75
+    p_factor = 0.55
     vmin, vmax = int(p_factor*255), 255
 
     xz_mask = np.zeros_like(data)
@@ -86,7 +85,7 @@ if __name__ == '__main__':
     for j in range(len(data_sets)):
     # for j in range(2):
         data = load_from_oct_file(data_sets[j])
-        p_factor = 0.75
+        p_factor = 0.55
         vmin, vmax = int(p_factor*255), 255
 
         xz_mask = np.zeros_like(data)

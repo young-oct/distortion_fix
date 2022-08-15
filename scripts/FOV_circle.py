@@ -4,69 +4,17 @@
 # @FileName: FOV_circle.py
 # @Software: PyCharm
 
-from tools.proc import despecking
-from skimage import exposure
-from tools.pos_proc import convert
+import time
 import glob
 import numpy as np
 import matplotlib.pyplot as plt
-from tools.pre_proc import load_from_oct_file
-from tools.proc import circle_cut, wall_index,median_filter
+from tools.pre_proc import load_from_oct_file,pre_volume,\
+    clean_small_object,obtain_inner_edge
+from tools.proc import wall_index
 import matplotlib
 from tools.plot import line_fit_plot
 from tools.proc import line_fit
-from skimage.morphology import closing,disk
 from natsort import natsorted
-
-# def pre_volume(volume, p_factor = 0.55, low = 2, edge_radius = 240):
-#     high = 100 - low
-#     new_volume = np.zeros(volume.shape)
-#     vmin, vmax = int(p_factor * 255), 255
-#
-#     for i in range(volume.shape[-1]):
-#         temp_slice = volume[:, :, i]
-#         temp_slice = circle_cut(temp_slice, inner_radius=40, edge_radius= edge_radius)
-#
-#         temp = despecking(temp_slice, sigma=3, size=5)
-#         temp_slice = np.where(temp < vmin, vmin, temp)
-#
-#         temp_slice = median_filter(temp_slice, size=5)
-#         temp_slice = closing(temp_slice, disk(5))
-#
-#         low_p, high_p = np.percentile(temp_slice, (low, high))
-#         temp = exposure.rescale_intensity(temp_slice,
-#                                           in_range=(low_p, high_p))
-#
-#         new_volume[:, :, i] = median_filter(temp, size=5)
-#
-#     return convert(new_volume, 0, 255, np.float64)
-
-def pre_volume(volume,low = 2, inner_radius=50, edge_radius = 240):
-    high = 100 - low
-    new_volume = np.zeros(volume.shape)
-    p_factor = np.median(data)/np.max(data)
-    vmin, vmax = int(p_factor * 255), 255
-
-    for i in range(volume.shape[-1]):
-        temp_slice = volume[:, :, i]
-        temp_slice = circle_cut(temp_slice,
-                                inner_radius=inner_radius,
-                                edge_radius= edge_radius)
-
-        temp = despecking(temp_slice, sigma=3, size=15)
-        temp_slice = np.where(temp < vmin, vmin, temp)
-
-        temp_slice = closing(temp_slice, disk(5))
-
-        low_p, high_p = np.percentile(temp_slice, (low, high))
-        temp = exposure.rescale_intensity(temp_slice,
-                                          in_range=(low_p, high_p))
-
-        new_volume[:, :, i] = temp
-
-    new_volume = np.where(new_volume < np.mean(new_volume), 0, 255)
-
-    return convert(new_volume, 0, 255, np.float64)
 
 if __name__ == '__main__':
 
@@ -82,17 +30,24 @@ if __name__ == '__main__':
     data_sets = natsorted(glob.glob('../data/MEEI/FOV/circle/raw/original/*.oct'))
     for k in range(len(data_sets)):
         data = load_from_oct_file(data_sets[k])
-        volume = pre_volume(data, low=2, inner_radius=50,
+        volume = pre_volume(data, low=1, inner_radius=50,
                             edge_radius=230)
+
+        re_volume = clean_small_object(volume)
+        edge_vol = obtain_inner_edge(re_volume)
 
         index_list = [0, 165, 229]
         title_list = ['top', 'middle', 'bottom']
 
         fig, axs = plt.subplots(1, len(index_list), figsize=(16, 9))
         for n, (ax, idx, title) in enumerate(zip(axs.flat, index_list, title_list)):
-            temp = volume[:, :, idx]
-            ax.imshow(temp, 'gray')
-            v_loc, h_loc = wall_index(temp, distance = 100, height = 0.6)
+            edge = edge_vol[:, :, idx]
+            img = volume[:, :, idx]
+            masked = np.ma.masked_where(edge == 1, edge)
+            ax.imshow(img, 'gray', vmin=np.max(img) * 0.5, vmax=np.max(img))
+            ax.imshow(masked, 'hot', alpha=0.9)
+
+            v_loc, h_loc = wall_index(edge, distance = 100, height = 0.6)
             vpts_list = ['pt1', 'pt2']
             hpts_list = ['pt3', 'pt4']
 
@@ -115,8 +70,8 @@ if __name__ == '__main__':
 
         depth_profile = []
         for i in range(volume.shape[-1]):
-            temp = volume[:, :, i]
-            v_loc, h_loc = wall_index(temp, distance = 100, height = 0.6)
+            edge = edge_vol[:, :, i]
+            v_loc, h_loc = wall_index(edge, distance = 100, height = 0.6)
             depth_profile.append((i, v_loc, h_loc))
 
         pts1, pts2, pts3, pts4 = [], [], [], []

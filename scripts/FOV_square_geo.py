@@ -3,26 +3,18 @@
 # @Author  : young wang
 # @FileName: FOV_square_geo.py
 # @Software: PyCharm
+
 import time
-from tools.proc import despecking
-from skimage import exposure
-from tools.pos_proc import convert
 import glob
 import numpy as np
-from skimage import measure
 import matplotlib.pyplot as plt
 from tools.pre_proc import load_from_oct_file,pre_volume,\
     clean_small_object,obtain_inner_edge
-from tools.proc import circle_cut, wall_index, median_filter
+from tools.proc import wall_index
 import matplotlib
 from tools.plot import line_fit_plot
 from tools.proc import line_fit
-from skimage.morphology import closing,disk,dilation,square
 from natsort import natsorted
-from scipy import ndimage
-from skimage.morphology import (square, rectangle, diamond, disk, cube,
-                                octahedron, ball, octagon, star)
-
 
 
 if __name__ == '__main__':

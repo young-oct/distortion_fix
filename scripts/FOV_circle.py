@@ -27,7 +27,7 @@ if __name__ == '__main__':
         }
     )
 
-    data_sets = natsorted(glob.glob('../data/MEEI/FOV/circle/raw/original/*.oct'))
+    data_sets = natsorted(glob.glob('../data/MEEI/FOV/circle/geometric/original/*.oct'))
     for k in range(len(data_sets)):
         data = load_from_oct_file(data_sets[k])
         volume = pre_volume(data, low=1, inner_radius=50,
@@ -36,7 +36,7 @@ if __name__ == '__main__':
         re_volume = clean_small_object(volume)
         edge_vol = obtain_inner_edge(re_volume)
 
-        index_list = [0, 165, 229]
+        index_list = [50, 165, 229]
         title_list = ['top', 'middle', 'bottom']
 
         fig, axs = plt.subplots(1, len(index_list), figsize=(16, 9))

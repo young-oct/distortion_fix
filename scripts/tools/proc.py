@@ -14,6 +14,7 @@ from scipy.interpolate import LinearNDInterpolator
 import math
 from numba import jit
 import matplotlib.patches as patches
+from numba import njit
 
 class circle_fit:
     def __init__(self, pts):
@@ -482,22 +483,6 @@ def map_index(img, xcenter, ycenter, radial_list, perspective_list):
 
     return c_img, idx_map
 
-def circle_cut(img: float,cut_ori = (256,256), inner_radius =40, edge_radius = 250) -> float:
-    x, y = cut_ori
-
-    for i in range(img.shape[0]):
-        for j in range(img.shape[1]):
-
-            radius = np.sqrt((i-x) ** 2 + (j-y) ** 2)
-
-            inner_criteria = radius - inner_radius
-            edge_criteria = radius - edge_radius
-
-            if inner_criteria < 0 or edge_criteria > 0:
-                img[i,j] = 0
-            else:
-                pass
-    return img
 
 def wall_index(img, distance = 80, height = 0.3 ):
     mid_index = int(img.shape[0]/2)
@@ -527,3 +512,27 @@ def line_fit(points, order=1):
     a, b = np.polyfit(x, y, order)
 
     return a, b
+
+
+@njit
+def circle_cut(vol: float,cut_ori = (256,256), inner_radius =40, edge_radius = 250) -> float:
+    x, y = cut_ori
+
+    assert vol.ndim == 3
+    c_vol = np.zeros_like(vol)
+
+    for i in range(vol.shape[-1]):
+        img = vol[:,:,i]
+        for j in range(img.shape[0]):
+            for k in range(img.shape[1]):
+                radius = np.sqrt((i-x) ** 2 + (j-y) ** 2)
+
+                inner_criteria = radius - inner_radius
+                edge_criteria = radius - edge_radius
+
+                if inner_criteria < 0 or edge_criteria > 0:
+                    img[i,j] = 0
+                else:
+                    pass
+        c_vol[:, :, i] = img
+    return c_vol

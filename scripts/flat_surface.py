@@ -81,6 +81,7 @@ if __name__ == '__main__':
     plt.show()
     print('done with estimating the initial origins %s' % origin_3D)
 
+    drift_line = []
     for j in range(len(data_sets)):
     # for j in range(2):
         data = load_from_oct_file(data_sets[j])
@@ -144,7 +145,18 @@ if __name__ == '__main__':
 
         plt.tight_layout()
         plt.show()
+
+        y_mean = np.median(y)
+        z_mean = origin_3D[-1]
+        drift_line.append((y_mean,z_mean))
         print('%dth plane with origins %s: radius(xz): %.2f, radius(yz):%.2f' % (j,origin_3D,  xz.radius, yz.radius))
 
-
+    # r,_,oz = zip(*drift_line)
+    fig, ax = plt.subplots(1,1, figsize= (16,9))
+    for pts in drift_line:
+        ax.plot(pts[0],pts[1], 'o',ms = 5,c = 'red')
+    ax.set_ylabel('Origin(z)')
+    ax.set_xlabel('plane depth')
+    plt.tight_layout()
+    plt.show()
 

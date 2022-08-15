@@ -78,30 +78,22 @@ def listtoarr(volume_list, Yflag=False):
     return volume
 
 
-def pre_volume(volume,low = 2, inner_radius=50, edge_radius = 240):
-    high = 100 - low
+def pre_volume(volume,p_factor = 0.6):
+
     new_volume = np.zeros_like(volume)
-    p_factor = np.mean(volume)/np.max(volume)
+    volume = circle_cut(volume)
+
     vmin, vmax = int(p_factor * 255), 255
-    c_volume = circle_cut(volume,
-                            inner_radius=inner_radius,
-                            edge_radius=edge_radius)
+    s_vol = np.where(volume <= vmin, 0, 255)
 
-    for i in range(volume.shape[-1]):
-        temp_slice = c_volume[:, :, i]
+    for i in range(s_vol.shape[-1]):
+        temp_img = s_vol[:,:,i]
+        temp_img = despecking(temp_img, sigma=1, size=3)
+        new_volume[:,:,i] = closing(temp_img, diamond(5))
 
-        temp = despecking(temp_slice, sigma=2, size=5)
-        temp_slice = np.where(temp <= vmin, vmin, temp)
+    new_volume = np.where(new_volume < np.max(new_volume) * p_factor, 0, 255)
+    return new_volume
 
-        low_p, high_p = np.percentile(temp_slice, (low, high))
-        temp_slice = exposure.rescale_intensity(temp_slice,
-                                          in_range=(low_p, high_p))
-        temp = closing(temp_slice, diamond(20))
-        temp = np.where(temp < np.mean(temp), 0, 255)
-
-        new_volume[:, :, i] = temp
-
-    return convert(new_volume, 0, 255, np.float64)
 
 
 def clean_small_object(volume):
@@ -111,7 +103,7 @@ def clean_small_object(volume):
         label_im, nb_labels = ndimage.label(c_slice)
         sizes = ndimage.sum(c_slice, label_im, range(nb_labels + 1))
 
-        mask_size = sizes < np.max(sizes) * 0.5
+        mask_size = sizes < np.mean(sizes)
         remove_pixel = mask_size[label_im]
 
         label_im[remove_pixel] = 0
@@ -129,6 +121,10 @@ def obtain_inner_edge(volume):
         if len(contours) > 1:
             for j in range(len(contours[1])):
                 x, y = contours[1][j]
+                edge_arr[int(x), int(y)] = 255
+        elif len(contours) == 1:
+            for j in range(len(contours[-1])):
+                x, y = contours[-1][j]
                 edge_arr[int(x), int(y)] = 255
         else:
             pass

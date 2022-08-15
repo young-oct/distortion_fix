@@ -11,7 +11,8 @@ import glob
 import numpy as np
 from skimage import measure
 import matplotlib.pyplot as plt
-from tools.pre_proc import load_from_oct_file
+from tools.pre_proc import load_from_oct_file,pre_volume,\
+    clean_small_object,obtain_inner_edge
 from tools.proc import circle_cut, wall_index, median_filter
 import matplotlib
 from tools.plot import line_fit_plot
@@ -22,65 +23,7 @@ from scipy import ndimage
 from skimage.morphology import (square, rectangle, diamond, disk, cube,
                                 octahedron, ball, octagon, star)
 
-def pre_volume(volume,low = 2, inner_radius=50, edge_radius = 240):
-    high = 100 - low
-    new_volume = np.zeros_like(volume)
-    p_factor = np.mean(data)/np.max(data)
-    vmin, vmax = int(p_factor * 255), 255
 
-    for i in range(volume.shape[-1]):
-        temp_slice = volume[:, :, i]
-        temp_slice = circle_cut(temp_slice,
-                                inner_radius = inner_radius,
-                                edge_radius= edge_radius)
-
-        temp = despecking(temp_slice, sigma=2, size=5)
-        temp_slice = np.where(temp <= vmin, vmin, temp)
-
-        low_p, high_p = np.percentile(temp_slice, (low, high))
-        temp = exposure.rescale_intensity(temp_slice,
-                                          in_range=(low_p, high_p))
-        temp = closing(temp, diamond(20))
-        new_volume[:, :, i] = temp
-
-    new_volume = np.where(new_volume < np.mean(new_volume), 0, 255)
-
-    return convert(new_volume, 0, 255, np.float64)
-
-
-def clean_small_object(volume):
-    new_volume = np.zeros_like(volume)
-    for i in range(volume.shape[-1]):
-        c_slice = volume[:,:,i]
-        label_im, nb_labels = ndimage.label(c_slice)
-        sizes = ndimage.sum(c_slice, label_im, range(nb_labels + 1))
-
-        mask_size = sizes < np.max(sizes) * 0.5
-        remove_pixel = mask_size[label_im]
-
-        label_im[remove_pixel] = 0
-        new_volume[:, :, i] = label_im
-    return new_volume
-
-def obtain_inner_edge(volume):
-
-    iedge_volume = np.zeros_like(volume)
-    for i in range(volume.shape[-1]):
-        c_slice = volume[:,:,i]
-        contours = measure.find_contours(c_slice)
-
-        #1 is the inner edge, 0 is the outer edge
-        edge_arr = np.zeros_like(c_slice)
-
-        try:
-            for j in range(len(contours[1]) - 1):
-                x, y = contours[1][j]
-                edge_arr[int(x), int(y)] = 255
-        except:
-            pass
-
-        iedge_volume[:,:,i] = edge_arr
-    return iedge_volume
 
 if __name__ == '__main__':
 
@@ -94,11 +37,12 @@ if __name__ == '__main__':
     )
 
     data_sets = natsorted(glob.glob('../data/MEEI/FOV/square/original/*.oct'))
+
     data = load_from_oct_file(data_sets[-1])
     start = time.perf_counter()
 
     volume = pre_volume(data, low = 1,inner_radius=50,
-                        edge_radius = 255)
+                        edge_radius = 250)
 
     re_volume = clean_small_object(volume)
     edge_vol = obtain_inner_edge(re_volume)
@@ -106,31 +50,18 @@ if __name__ == '__main__':
     end = time.perf_counter()
     print("Elapsed (after compilation) = %.2fs" % (end - start))
 
-    plt.imshow(re_volume[:,:,-20])
-    plt.show()
-
-    # test = re_volume[:,:,-1]
-    # contours = measure.find_contours(test)
-    #
-    # # 1 is the inner edge, 0 is the outer edge
-    # edge_arr = np.zeros_like(test)
-    #
-    # try:
-    #     for j in range(len(contours[1]) - 1):
-    #         x, y = contours[1][j]
-    #         edge_arr[int(x), int(y)] = 255
-    # except:
-    #     pass
-
-
     index_list = [0, 165, 229]
     title_list = ['top', 'middle', 'bottom']
 
     fig, axs = plt.subplots(1, len(index_list), figsize=(16, 9))
     for n, (ax, idx, title) in enumerate(zip(axs.flat, index_list, title_list)):
-        temp = edge_vol[:, :, idx]
-        ax.imshow(temp, 'gray')
-        v_loc, h_loc = wall_index(temp, distance = 100, height = 0.6)
+        edge = edge_vol[:, :, idx]
+        img = volume[:, :, idx]
+        masked = np.ma.masked_where(edge == 1, edge)
+        ax.imshow(img, 'gray',vmin = np.max(img) * 0.5, vmax=np.max(img))
+        ax.imshow(masked, 'hot', alpha=0.9)
+
+        v_loc, h_loc = wall_index(edge, distance = 100, height = 0.6)
         vpts_list = ['pt1', 'pt2']
         hpts_list = ['pt3', 'pt4']
 
@@ -153,8 +84,8 @@ if __name__ == '__main__':
 
     depth_profile = []
     for i in range(volume.shape[-1]):
-        temp = edge_vol[:, :, i]
-        v_loc, h_loc = wall_index(temp, distance = 100, height = 0.6)
+        edge = edge_vol[:, :, i]
+        v_loc, h_loc = wall_index(edge, distance = 100, height = 0.6)
         depth_profile.append((i, v_loc, h_loc))
 
     pts1, pts2, pts3, pts4 = [], [], [], []

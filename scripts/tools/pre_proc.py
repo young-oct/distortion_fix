@@ -5,9 +5,14 @@
 # @Software: PyCharm
 """preprocessing module"""
 
+from skimage import measure,exposure
+from skimage.morphology import closing,disk,dilation,square
+from scipy import ndimage
+from skimage.morphology import (square, rectangle, diamond, disk, cube,
+                                octahedron, ball, octagon, star)
 import os
-from scripts.tools.proc import clean_removal
-from scripts.tools.pos_proc import imag2uint
+from scripts.tools.proc import clean_removal,circle_cut,despecking
+from scripts.tools.pos_proc import imag2uint,convert
 import numpy as np
 from scripts.tools.OssiviewBufferReader import OssiviewBufferReader
 
@@ -71,3 +76,62 @@ def listtoarr(volume_list, Yflag=False):
             volume[:, i, :] = volume_list[i]
 
     return volume
+
+
+def pre_volume(volume,low = 2, inner_radius=50, edge_radius = 240):
+    high = 100 - low
+    new_volume = np.zeros_like(volume)
+    p_factor = np.mean(volume)/np.max(volume)
+    vmin, vmax = int(p_factor * 255), 255
+
+    for i in range(volume.shape[-1]):
+        temp_slice = volume[:, :, i]
+        temp_slice = circle_cut(temp_slice,
+                                inner_radius = inner_radius,
+                                edge_radius= edge_radius)
+
+        temp = despecking(temp_slice, sigma=2, size=5)
+        temp_slice = np.where(temp <= vmin, vmin, temp)
+
+        low_p, high_p = np.percentile(temp_slice, (low, high))
+        temp = exposure.rescale_intensity(temp_slice,
+                                          in_range=(low_p, high_p))
+        temp = closing(temp, diamond(20))
+        new_volume[:, :, i] = temp
+
+    new_volume = np.where(new_volume < np.mean(new_volume), 0, 255)
+
+    return convert(new_volume, 0, 255, np.float64)
+
+
+def clean_small_object(volume):
+    new_volume = np.zeros_like(volume)
+    for i in range(volume.shape[-1]):
+        c_slice = volume[:,:,i]
+        label_im, nb_labels = ndimage.label(c_slice)
+        sizes = ndimage.sum(c_slice, label_im, range(nb_labels + 1))
+
+        mask_size = sizes < np.max(sizes) * 0.5
+        remove_pixel = mask_size[label_im]
+
+        label_im[remove_pixel] = 0
+        new_volume[:, :, i] = label_im
+    return new_volume
+
+def obtain_inner_edge(volume):
+
+    iedge_volume = np.zeros_like(volume)
+    for i in range(volume.shape[-1]):
+        c_slice = volume[:,:,i]
+        contours = measure.find_contours(c_slice)
+        #1 is the inner edge, 0 is the outer edge
+        edge_arr = np.zeros_like(c_slice)
+        try:
+            for j in range(len(contours[1]) - 1):
+                x, y = contours[1][j]
+                edge_arr[int(x), int(y)] = 255
+        except:
+            pass
+
+        iedge_volume[:,:,i] = edge_arr
+    return iedge_volume

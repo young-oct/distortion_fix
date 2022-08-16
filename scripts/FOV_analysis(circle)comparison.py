@@ -12,6 +12,7 @@ from tools.pre_proc import load_from_oct_file,pre_volume,\
     clean_small_object,obtain_inner_edge
 from tools.proc import wall_index
 import matplotlib
+from tools.pos_proc import image_export
 from tools.plot import line_fit_plot
 from tools.proc import line_fit
 from natsort import natsorted

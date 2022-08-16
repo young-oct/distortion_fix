@@ -149,9 +149,10 @@ def oct_to_dicom(data, resolutionx, resolutiony,resolutionz,
         all_files_exist = all_files_exist and isfile(dicom_file)
     return all_files_exist
 
-def image_export(img, filename):
+def image_export(img,vmin, vmax, filename):
     plt.axis("off")
-    fig = plt.imshow(img, 'gray', interpolation='nearest')
+    fig = plt.imshow(img, 'gray', vmin = vmin, vmax = vmax,
+                     interpolation='nearest')
     fig.axes.get_xaxis().set_visible(False)
     fig.axes.get_yaxis().set_visible(False)
 

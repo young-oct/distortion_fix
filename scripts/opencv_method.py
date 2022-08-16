@@ -40,5 +40,12 @@ if __name__ == '__main__':
 
         if ret:
             print(checker)
+            fig, ax = plt.subplots(1, 1, figsize=(16, 9))
+            ax.imshow(c_gray, 'gray')
+            for pts in corners.squeeze():
+                ax.plot(pts[0],pts[1], 'o',ms = 10, color = 'red')
+            # ax.set_axis_off()
+            plt.show()
+
     print('done')
 

@@ -33,13 +33,13 @@ if __name__ == '__main__':
     c_gray = c_gray.astype(img.dtype)
     ax[1].imshow(c_gray, 'gray')
     plt.show()
-
+    tru_chk = []
     for checker in checksize:
-
         ret, corners = cv.findChessboardCorners(c_gray, checker, None)
 
         if ret:
             print(checker)
+            tru_chk.append(checker)
             fig, ax = plt.subplots(1, 1, figsize=(16, 9))
             ax.imshow(c_gray, 'gray')
             for pts in corners.squeeze():
@@ -49,3 +49,28 @@ if __name__ == '__main__':
 
     print('done')
 
+    # chckboard = tru_chk[-1]
+    # objp = np.zeros((chckboard[0]*chckboard[1],3), np.float32)
+    # objp[:, :2] = np.mgrid[0:chckboard[1],
+    #               0:chckboard[0]].T.reshape(-1, 2)
+    # # Arrays to store object points and image points from all the images.
+    # objpoints = []  # 3d point in real world space
+    # imgpoints = []  # 2d points in image plane.
+    #
+    # # Find the chess board corners
+    # ret, corners = cv.findChessboardCorners(gray, chckboard, None)
+    # # If found, add object points, image points (after refining them)
+    # if ret == True:
+    #     objpoints.append(objp)
+    #     corners2 = cv.cornerSubPix(gray,corners, (11,11), (-1,-1), criteria)
+    #     imgpoints.append(corners)
+    #
+    # ret, mtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, imgpoints,
+    #                                                   gray.shape[::-1], None, None)
+    #
+    # newcameramtx, roi = cv.getOptimalNewCameraMatrix(mtx, dist, gray.shape[::-1], 1,gray.shape[::-1])
+    # mapx, mapy = cv.initUndistortRectifyMap(mtx, dist, None, newcameramtx, gray.shape[::-1], 5)
+    # dst = cv.remap(c_gray, mapx, mapy, cv.INTER_LINEAR)
+    #
+    # plt.imshow(dst)
+    # plt.show()

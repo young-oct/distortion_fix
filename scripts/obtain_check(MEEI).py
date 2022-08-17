@@ -3,13 +3,8 @@
 # @Author  : young wang
 # @FileName: obtain_check(MEEI).py
 # @Software: PyCharm
-import matplotlib.pyplot as plt
-import numpy as np
-import cv2 as cv
-import glob
-from natsort import natsorted
 
-from itertools import combinations_with_replacement
+import numpy as np
 import matplotlib.pyplot as plt
 import discorpy.prep.preprocessing as prep
 import discorpy.prep.linepattern as lprep
@@ -21,9 +16,7 @@ from skimage.morphology import square, \
     closing, dilation, erosion, disk, diamond, opening
 from tools.proc import median_filter
 
-
 if __name__ == '__main__':
-    # termination criteria
 
     mat0 = io.load_image('../validation/Artboard 1.png')  # Load image
     mat0 = closing(mat0, disk(3))
@@ -33,8 +26,6 @@ if __name__ == '__main__':
     slope_ver, dist_ver = lprep.calc_slope_distance_ver_lines(mat1, radius=15, sensitive=0.5)
     print("Horizontal slope: ", slope_hor, " Distance: ", dist_hor)
     print("Vertical slope: ", slope_ver, " Distance: ", dist_ver)
-    # plt.imshow(mat1, 'gray')
-    # plt.show()
 
     # Extract reference-points
     list_points_hor_lines = lprep.get_cross_points_hor_lines(mat1, slope_ver, dist_ver,
@@ -56,18 +47,10 @@ if __name__ == '__main__':
     # # # Remove residual dots
     list_hor_lines0 = prep.remove_residual_dots_hor(list_hor_lines, slope_hor, 2.0)
     list_ver_lines0 = prep.remove_residual_dots_ver(list_ver_lines, slope_ver, 2.0)
-
-    plt.imshow(mat1, 'gray')
-    for line in list_hor_lines:
-        plt.plot(line[:, 1], line[:, 0], '--o', markersize=4)
-    for line in list_ver_lines:
-        plt.plot(line[:, 1], line[:, 0], '--o', markersize=4)
-    plt.show()
-
     # Regenerate grid points after correcting the perspective effect.
     list_hor_lines1, list_ver_lines1 = proc.regenerate_grid_points_parabola(
         list_hor_lines0, list_ver_lines0, perspective=True)
-    num_coef = 5
+    num_coef = 3
 
     # Calculate parameters of the radial correction model
     (xcenter, ycenter) = proc.find_cod_coarse(list_hor_lines1, list_ver_lines1)
@@ -82,42 +65,47 @@ if __name__ == '__main__':
     list_uver_lines = post.unwarp_line_backward(list_ver_lines2, xcenter, ycenter,
                                                 list_fact)
 
-    plt.imshow(mat1, 'gray')
-    for line in list_uhor_lines:
-        plt.plot(line[:, 1], line[:, 0], '--o', markersize=4)
-    for line in list_uver_lines:
-        plt.plot(line[:, 1], line[:, 0], '--o', markersize=4)
-    plt.show()
-
     mat_rad_corr = post.unwarp_image_backward(mat0, xcenter, ycenter, list_fact)
 
-    # Generate source points and target points to calculate coefficients of a perspective model
-    # source_points = [[46, 126],
-    #                  [100.5, 128.5],
-    #                  [39.5, 161.5],
-    #                  [98.5, 165.5]]
     # Generate undistorted points. Note that the output coordinate is in the yx-order.
-    source_points, target_points = proc.generate_source_target_perspective_points(list_uhor_lines, list_uver_lines)
-
-    # s_points, t_points = proc.generate_4_source_target_perspective_points(
-    #     source_points, input_order="xy", scale="mean", equal_dist=True)
-
-    # source_points, target_points = proc.generate_source_target_perspective_points(list_uhor_lines, list_uver_lines,
+    source_points, target_points = proc.generate_source_target_perspective_points(list_uhor_lines,
+                                                                                  list_uver_lines,
+                                                                                  equal_dist=True,
+                                                                                  scale="median",
+                                                                                  optimizing=True)
 
     pers_coef = proc.calc_perspective_coefficients(source_points, target_points, mapping="backward")
-    #
+
     image_pers_corr = post.correct_perspective_image(mat_rad_corr, pers_coef)
-    plt.imshow(image_pers_corr, 'gray')
-    plt.show()
 
-    fig,ax = plt.subplots(1,3, figsize = (16,9))
-    ax[0].imshow(mat0,'gray')
-    ax[0].set_title('distorted image')
+    img_list = [mat0,mat1,mat1,
+                mat1,mat_rad_corr,image_pers_corr]
+    title_list = ['original', 'line pattern image', 'line feature',
+                  'perspective lines','radially corrected', 'radial+perspective']
+    fig, axs = plt.subplots(2, 3, figsize=(16, 9), constrained_layout=True)
+    for n, (ax, image, title) in enumerate(zip(axs.flat, img_list, title_list)):
+        ax.imshow(image, 'gray', vmin=np.mean(image)*0.9, vmax=np.max(image))
+        ax.set_title(title)
+        ax.set_axis_off()
 
-    ax[1].imshow(mat_rad_corr,'gray')
-    ax[1].set_title('radially corrected image')
-
-    ax[2].imshow(image_pers_corr,'gray')
-    ax[2].set_title('radially & perspective corrected image')
-    plt.tight_layout()
+        if n == 2:
+            for line in list_hor_lines0:
+                ax.plot(line[:, 1], line[:, 0], '--o', markersize=4)
+            for line in list_ver_lines0:
+                ax.plot(line[:, 1], line[:, 0], '--o', markersize=4)
+        elif n == 3:
+            for line in list_hor_lines1:
+                ax.plot(line[:, 1], line[:, 0], '--o', markersize=4)
+            for line in list_ver_lines1:
+                ax.plot(line[:, 1], line[:, 0], '--o', markersize=4)
+        elif n == 4:
+            for line in list_uhor_lines:
+                ax.plot(line[:, 1], line[:, 0], linestyle= 'solid', markersize=4)
+            for line in list_uver_lines:
+                ax.plot(line[:, 1], line[:, 0], linestyle='solid', markersize=4)
+        elif n == 5:
+            for pt in target_points:
+                ax.plot(pt[1], pt[0], 'o', markersize=3, color = 'lawngreen')
+        else:
+            pass
     plt.show()

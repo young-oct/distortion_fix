@@ -32,7 +32,7 @@ if __name__ == '__main__':
         }
     )
 
-    data_sets = natsorted(glob.glob('../data/MEEI/checkerboard/*.oct'))
+    data_sets = natsorted(glob.glob('../data/MEEI/checkerboard/geometric/*.oct'))
     volume = load_from_oct_file(data_sets[0])
 
     p_factor = 0.5
@@ -162,4 +162,4 @@ if __name__ == '__main__':
     plt.show()
     print('done')
 
-    image_export(ori_img,'/Users/youngwang/Desktop/distortion_fix/validation/target1.png')
+    # image_export(ori_img,'/Users/youngwang/Desktop/distortion_fix/validation/target1.png')

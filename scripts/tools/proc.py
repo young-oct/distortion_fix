@@ -359,7 +359,7 @@ def mip_stack(volume, index, thickness):
     low_b, high_b = int(index - thickness), int(index + thickness)
 
     if low_b >= 0 or high_b <= volume.shape[-1]:
-        return np.amax(volume[:, :, low_b::high_b], axis=2)
+        return np.amax(volume[:, :, low_b:high_b], axis=2)
 
 
 @jit(nopython=True)

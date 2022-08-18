@@ -22,7 +22,7 @@ import discorpy.prep.preprocessing as prep
 import discorpy.proc.processing as proc
 import discorpy.post.postprocessing as post
 
-def get_feature_map(img, low_ratio = 0.3, high_ratio = 2):
+def get_feature_map(img, low_ratio = 0.3, high_ratio = 3):
 
     h,w = img.shape
     fig_dpi = 100
@@ -103,7 +103,7 @@ if __name__ == '__main__':
     img_list.append(img_cls)
     tit_list.append('closed operation')
 
-    (dot_size, dot_dist) = prep.calc_size_distance(img_bin)
+    (dot_size, dot_dist) = prep.calc_size_distance(img_cls)
 
     # create label map of the initial image
     label_image = label(img_cls)
@@ -111,7 +111,7 @@ if __name__ == '__main__':
     pt_lst = []
     for region in regionprops(label_image):
         # take regions with large enough areas
-        up_sze = 2 * dot_size
+        up_sze = 3 * dot_size
         lw_sze = 0.3 * dot_size
 
         if lw_sze < region.area < up_sze:

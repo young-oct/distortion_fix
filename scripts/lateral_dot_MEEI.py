@@ -270,16 +270,6 @@ if __name__ == '__main__':
     img_list.append(img_pers)
     tit_list.append('radial + perspective')
 
-    # target_points_2 = points_alignment(img_pers,target_points)
-    # # Calculate perspective coefficients:
-    # pers_coef_2 = proc.calc_perspective_coefficients(source_points,
-    #                                                target_points_2,
-    #                                                mapping="backward")
-    # final = post.correct_perspective_image(img_rad, pers_coef_2, order=3)
-    #
-    # img_list.append(final)
-    # tit_list.append('final')
-
     c_num = np.ceil(len(img_list) / 2)
     fig, axs = plt.subplots(2, int(c_num), figsize=(16, 9),
                             constrained_layout=True)
@@ -302,8 +292,24 @@ if __name__ == '__main__':
                 ax.plot(line[:, 1], line[:, 0], '--o', markersize=1)
             for line in list_ver_lines:
                 ax.plot(line[:, 1], line[:, 0], '--o', markersize=1)
-        #
-
         else:
             pass
+    plt.show()
+
+
+    target_points_2 = points_alignment(img_pers,target_points)
+    # Calculate perspective coefficients:
+    pers_coef_2 = proc.calc_perspective_coefficients(source_points,
+                                                   target_points_2,
+                                                   mapping="backward")
+    img_fin = post.correct_perspective_image(img_rad, pers_coef_2, order=3)
+
+    comp_img_lst = [img_fea,img_pers,img_fin]
+    com_title_lst =['distorted', 'corrected', 'aligned']
+    fig, axs = plt.subplots(1, 3, figsize=(16, 9),
+                            constrained_layout=True)
+    for n, (ax, image, title) in enumerate(zip(axs.flat, comp_img_lst, com_title_lst)):
+        ax.imshow(image, 'gray', vmin=np.min(image), vmax=np.max(image))
+        ax.set_title(title)
+        ax.set_axis_off()
     plt.show()

@@ -6,7 +6,7 @@
 
 from skimage.measure import label, regionprops
 import matplotlib.patches as mpatches
-
+import cv2 as cv
 from tools.proc import filter_mask, \
     surface_index, sphere_fit, frame_index, max_slice, despecking, mip_stack
 import glob
@@ -22,12 +22,12 @@ import discorpy.prep.preprocessing as prep
 import discorpy.proc.processing as proc
 import discorpy.post.postprocessing as post
 
-def get_feature_map(img, low_ratio = 0.3, high_ratio = 3):
 
-    h,w = img.shape
+def get_feature_map(img, low_ratio=0.3, high_ratio=3):
+    h, w = img.shape
     fig_dpi = 100
-    fig,ax = plt.subplots(1,1,
-                          figsize = (h/fig_dpi,w/fig_dpi),dpi = fig_dpi)
+    fig, ax = plt.subplots(1, 1,
+                           figsize=(h / fig_dpi, w / fig_dpi), dpi=fig_dpi)
 
     label_image = label(img)
     ax.imshow(np.zeros_like(img), 'gray')
@@ -37,27 +37,27 @@ def get_feature_map(img, low_ratio = 0.3, high_ratio = 3):
         lw_sze = low_ratio * dot_size
 
         if lw_sze < region.area < up_sze:
-
             y, x = region.centroid
             circle = mpatches.Circle((x, y),
-                                   radius=3,
-                                   fill=True,
-                                   edgecolor='white',
-                                   facecolor= 'white',
-                                   linewidth=1)
+                                     radius=3,
+                                     fill=True,
+                                     edgecolor='white',
+                                     facecolor='white',
+                                     linewidth=1)
             ax.add_patch(circle)
     ax.set_axis_off()
-    plt.tight_layout(pad =0,h_pad = 0, w_pad=0)
+    plt.tight_layout(pad=0, h_pad=0, w_pad=0)
     return fig2array(fig)
+
 
 def fig2array(fig):
     """adapted from: https://stackoverflow.com/questions/21939658/"""
     fig.canvas.draw()
     buf = fig.canvas.tostring_rgb()
     ncols, nrows = fig.canvas.get_width_height()
-    img = np.frombuffer(buf, dtype=np.uint8).reshape(nrows, ncols,3)
+    img = np.frombuffer(buf, dtype=np.uint8).reshape(nrows, ncols, 3)
 
-    return img[:,:,0]
+    return img[:, :, 0]
 
 
 if __name__ == '__main__':
@@ -90,7 +90,7 @@ if __name__ == '__main__':
     img_list.append(img_ori)
     tit_list.append('original image')
 
-    img_norm = prep.normalization_fft(img_ori, sigma = 0.5)
+    img_norm = prep.normalization_fft(img_ori, sigma=0.5)
     img_list.append(img_norm)
     tit_list.append('denoised image')
 
@@ -99,9 +99,16 @@ if __name__ == '__main__':
     img_list.append(img_bin)
     tit_list.append('binary image')
 
-    img_cls = opening(img_bin,disk(3))
+    img_cls = opening(img_bin, disk(3))
+
+    # mask to break down the connected pixels
+    mask = erosion(img_cls, np.ones((21, 1)))
+    mask = dilation(mask, np.ones((1, 3)))
+
+    img_cls = cv.bitwise_xor(img_cls, mask)
+
     img_list.append(img_cls)
-    tit_list.append('closed operation')
+    tit_list.append('segmentation image')
 
     (dot_size, dot_dist) = prep.calc_size_distance(img_cls)
 
@@ -112,16 +119,16 @@ if __name__ == '__main__':
     for region in regionprops(label_image):
         # take regions with large enough areas
         up_sze = 3 * dot_size
-        lw_sze = 0.3 * dot_size
+        lw_sze = 0.5 * dot_size
 
         if lw_sze < region.area < up_sze:
 
             y, x = region.centroid
-            pt_lst.append((x,y))
+            pt_lst.append((x, y))
         else:
             pass
 
-    img_fea = get_feature_map(img_cls)
+    img_fea = get_feature_map(img_cls,low_ratio=0.5,high_ratio=3)
 
     img_list.append(img_fea)
     tit_list.append('dot feature')
@@ -155,8 +162,8 @@ if __name__ == '__main__':
     list_ver_coef = proc._para_fit_ver(list_ver_lines, xcen_tmp, ycen_tmp)[0]
 
     pers_title = ['horizontal', 'vertical']
-    fig, ax = plt.subplots(1,2, figsize=(16, 9),
-                            constrained_layout=True)
+    fig, ax = plt.subplots(1, 2, figsize=(16, 9),
+                           constrained_layout=True)
     ax[0].plot(list_hor_coef[:, 2], list_hor_coef[:, 0], "-o")
     ax[0].plot(list_ver_coef[:, 2], list_ver_coef[:, 0], "-o")
 
@@ -195,7 +202,7 @@ if __name__ == '__main__':
     # Generate source points and target points to calculate coefficients of a perspective model
     source_points, target_points = proc.generate_source_target_perspective_points(list_uhor_lines, list_uver_lines,
                                                                                   equal_dist=True, scale="max",
-                                                                                 optimizing=True)
+                                                                                  optimizing=True)
     # Calculate perspective coefficients:
     pers_coef = proc.calc_perspective_coefficients(source_points,
                                                    target_points,
@@ -205,21 +212,21 @@ if __name__ == '__main__':
     img_list.append(img_pers)
     tit_list.append('radial + perspective')
 
-    c_num = np.ceil(len(img_list)/2)
+    c_num = np.ceil(len(img_list) / 2)
     fig, axs = plt.subplots(2, int(c_num), figsize=(16, 9),
                             constrained_layout=True)
     for n, (ax, image, title) in enumerate(zip(axs.flat, img_list, tit_list)):
         ax.imshow(image, 'gray', vmin=np.min(image), vmax=np.max(image))
         ax.set_title(title)
         ax.set_axis_off()
-        if n == len(tit_list)-5:
+        if n == len(tit_list) - 5:
             for pts in pt_lst:
                 x, y = pts
                 circle = mpatches.Circle((x, y),
-                                    radius=3,
-                                    fill=True,
-                                    edgecolor='red',
-                                    linewidth=1)
+                                         radius=3,
+                                         fill=True,
+                                         edgecolor='red',
+                                         linewidth=1)
                 ax.add_patch(circle)
         # elif n == len(tit_list)-2:
         #     for pt in source_points:
@@ -231,7 +238,7 @@ if __name__ == '__main__':
         #     for pt in target_points:
         #         ax.plot(pt[1], pt[0], 'o', markersize=3, color = 'lawngreen')
 
-        elif n == len(tit_list)-3:
+        elif n == len(tit_list) - 3:
             for line in list_hor_lines:
                 ax.plot(line[:, 1], line[:, 0], '--o', markersize=1)
             for line in list_ver_lines:

@@ -5,11 +5,14 @@
 # @Software: PyCharm
 
 from skimage.measure import label, regionprops
+from skimage.morphology import convex_hull_image
 import matplotlib.patches as mpatches
 import cv2 as cv
 from tools.proc import filter_mask, \
     surface_index, sphere_fit, frame_index, max_slice, despecking, mip_stack
 import glob
+from skimage import transform
+
 import numpy as np
 import matplotlib.pyplot as plt
 from tools.pre_proc import load_from_oct_file, pre_volume, \
@@ -58,6 +61,61 @@ def fig2array(fig):
 
     return img[:, :, 0]
 
+def image_alignment(img):
+    """
+    this function takes the image and perform convex hull operation
+    and labeling to estimate the geometric transformation needed
+    to adjust the source points so that the final image aligns with
+    common view plane
+
+    """
+    # compute the first convex hull to estimate rotation angle
+    # so that the major axis passes through the image center.
+    #i.e. (256,256) if the image is 512 x 512
+    chull_rot = convex_hull_image(img)
+    label_rot = label(chull_rot)
+
+    p_rot = [region.centroid for region in regionprops(label_rot)]
+    p_rot = np.asarray(p_rot).squeeze()
+
+    fit_rot = np.polyfit([0,p_rot[0]],[0,p_rot[1]], deg=1)
+
+    # obtain the first transformation matrix to roatate image for
+    # subsequent translation calculation
+    rotate_angle = 1-fit_rot[0]
+    tform_r = transform.SimilarityTransform(scale=1, rotation=rotate_angle,
+                                          translation=(0, 0))
+
+    img_rot = transform.warp(chull_rot, tform_r)
+
+    label_trans = label(img_rot)
+
+    p_trans = [region.centroid for region in regionprops(label_trans)]
+
+    p_trans = np.asarray(p_trans).squeeze()
+
+    x_offset = p_trans[0] - 256
+    y_offset = p_trans[1] - 256
+
+    return rotate_angle,x_offset,y_offset
+
+def points_alignment(img,source_points):
+    rotate_angle, x_offset, y_offset = image_alignment(img)
+
+    # Apply rotating
+    x = source_points[:, 1]
+    y = source_points[:, 0]
+    a = np.deg2rad(rotate_angle)
+    x_rot = x * np.cos(a) - y * np.sin(a)
+    y_rot = x * np.sin(a) + y * np.cos(a)
+
+    # Apply translating
+    x_rot = x_rot + x_offset
+    y_rot = y_rot + y_offset
+
+    target_points = np.asarray(list(zip(y_rot, x_rot)))
+
+    return target_points
 
 if __name__ == '__main__':
 
@@ -211,6 +269,16 @@ if __name__ == '__main__':
 
     img_list.append(img_pers)
     tit_list.append('radial + perspective')
+
+    # target_points_2 = points_alignment(img_pers,target_points)
+    # # Calculate perspective coefficients:
+    # pers_coef_2 = proc.calc_perspective_coefficients(source_points,
+    #                                                target_points_2,
+    #                                                mapping="backward")
+    # final = post.correct_perspective_image(img_rad, pers_coef_2, order=3)
+    #
+    # img_list.append(final)
+    # tit_list.append('final')
 
     c_num = np.ceil(len(img_list) / 2)
     fig, axs = plt.subplots(2, int(c_num), figsize=(16, 9),

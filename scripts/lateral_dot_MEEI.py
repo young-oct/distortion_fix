@@ -116,10 +116,11 @@ if __name__ == '__main__':
     label_image = label(img_cls)
 
     pt_lst = []
+    low_ratio,high_ratio  = 0.5, 3
     for region in regionprops(label_image):
         # take regions with large enough areas
-        up_sze = 3 * dot_size
-        lw_sze = 0.5 * dot_size
+        up_sze = high_ratio * dot_size
+        lw_sze = low_ratio * dot_size
 
         if lw_sze < region.area < up_sze:
 
@@ -128,7 +129,7 @@ if __name__ == '__main__':
         else:
             pass
 
-    img_fea = get_feature_map(img_cls,low_ratio=0.5,high_ratio=3)
+    img_fea = get_feature_map(img_cls,low_ratio=low_ratio,high_ratio=high_ratio)
 
     img_list.append(img_fea)
     tit_list.append('dot feature')

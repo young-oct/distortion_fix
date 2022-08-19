@@ -208,10 +208,39 @@ if __name__ == '__main__':
     pers_coef = proc.calc_perspective_coefficients(source_points,
                                                    target_points,
                                                    mapping="backward")
-    img_pers = post.correct_perspective_image(img_rad, pers_coef)
+    img_pers = post.correct_perspective_image(img_rad, pers_coef, order=3)
 
     img_list.append(img_pers)
     tit_list.append('radial + perspective')
+
+    # rotate_angle = -2.5
+    # x_offset = 0
+    # y_offset = 0
+    # scale = 1
+    #
+    # # Apply rotating
+    # x = target_points[:, 1]
+    # y = target_points[:, 0]
+    # a = np.deg2rad(rotate_angle)
+    # x_rot = x * np.cos(a) - y * np.sin(a)
+    # y_rot = x * np.sin(a) + y * np.cos(a)
+    #
+    # # Apply scaling
+    # x_rot = x_rot * scale
+    # y_rot = y_rot * scale
+    #
+    # # Apply translating
+    # x_rot = x_rot + x_offset
+    # y_rot = y_rot + y_offset
+    #
+    # # Update target points
+    # t_points2 = np.asarray(list(zip(y_rot, x_rot)))
+    # list_coef2 = proc.calc_perspective_coefficients(source_points, t_points2, mapping="backward")
+    #
+    # mat_cor = post.correct_perspective_image(img_rad, list_coef2, order=3)
+    #
+    # img_list.append(mat_cor)
+    # tit_list.append('radial + perspective')
 
     c_num = np.ceil(len(img_list) / 2)
     fig, axs = plt.subplots(2, int(c_num), figsize=(16, 9),
@@ -229,15 +258,6 @@ if __name__ == '__main__':
                                          edgecolor='red',
                                          linewidth=1)
                 ax.add_patch(circle)
-        # elif n == len(tit_list)-2:
-        #     for pt in source_points:
-        #         ax.plot(pt[1], pt[0], 'o', markersize=3, color = 'red')
-        #     for pt in target_points:
-        #         ax.plot(pt[1], pt[0], 'o', markersize=3, color = 'lawngreen')
-
-        # elif n == len(tit_list)-2:
-        #     for pt in target_points:
-        #         ax.plot(pt[1], pt[0], 'o', markersize=3, color = 'lawngreen')
 
         elif n == len(tit_list) - 3:
             for line in list_hor_lines:
@@ -245,11 +265,7 @@ if __name__ == '__main__':
             for line in list_ver_lines:
                 ax.plot(line[:, 1], line[:, 0], '--o', markersize=1)
         #
-        # elif n == len(tit_list)-1:
-        #     for line in list_uhor_lines:
-        #         ax.plot(line[:, 1], line[:, 0], '--o', markersize=1)
-        #     for line in list_uver_lines:
-        #         ax.plot(line[:, 1], line[:, 0], '--o', markersize=1)
+
         else:
             pass
     plt.show()

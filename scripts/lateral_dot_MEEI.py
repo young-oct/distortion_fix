@@ -49,7 +49,6 @@ def get_feature_map(img, low_ratio=0.3, high_ratio=3):
     plt.tight_layout(pad=0, h_pad=0, w_pad=0)
     return fig2array(fig)
 
-
 def fig2array(fig):
     """adapted from: https://stackoverflow.com/questions/21939658/"""
     fig.canvas.draw()
@@ -212,33 +211,6 @@ if __name__ == '__main__':
 
     img_list.append(img_pers)
     tit_list.append('radial + perspective')
-    #
-    # x_offset,y_offset = -26.562275,- 12.920574
-    # scale =1
-    # # a = -0.06049714
-    # a = -0.08
-    # # Apply rotating
-    # x = target_points[:, 1]
-    # y = target_points[:, 0]
-    # x_rot = x * np.cos(a) - y * np.sin(a)
-    # y_rot = x * np.sin(a) + y * np.cos(a)
-    #
-    # # Apply scaling
-    # x_rot = x_rot * scale
-    # y_rot = y_rot * scale
-    #
-    # # Apply translating
-    # x_rot = x_rot + x_offset
-    # y_rot = y_rot + y_offset
-    #
-    # # Update target points
-    # t_points2 = np.asarray(list(zip(y_rot, x_rot)))
-    # list_coef2 = proc.calc_perspective_coefficients(source_points, t_points2, mapping="backward")
-    #
-    # mat_cor = post.correct_perspective_image(img_rad, list_coef2, order=3)
-    #
-    # img_list.append(mat_cor)
-    # tit_list.append('radial + perspective')
 
     c_num = np.ceil(len(img_list) / 2)
     fig, axs = plt.subplots(2, int(c_num), figsize=(16, 9),
@@ -267,43 +239,3 @@ if __name__ == '__main__':
         else:
             pass
     plt.show()
-
-    # four_list = []
-    # x, y = zip(*target_points)
-    # x_idx_min, x_idx_max = np.argmin(x),np.argmax(x)
-    # y_idx_min, y_idx_max = np.argmin(y),np.argmax(y)
-    #
-    # x1, y1 = target_points[x_idx_min]
-    # x2, y2 = target_points[y_idx_max]
-    #
-    # slp = np.abs(y2-y1)/np.abs(x2-x1)
-    # a = np.arctan((x2-x1)/(y2-y1))
-    #
-    # # x_rot_1 = x1 * np.cos(a) - y1 * np.sin(a)
-    # # y_rot_1 = x1 * np.sin(a) + y1 * np.cos(a)
-    #
-    # x_rot_2 = x2 * np.cos(a) - y2 * np.sin(a)
-    # y_rot_2 = x2 * np.sin(a) + y2 * np.cos(a)
-    #
-    # # new_line = [(x_rot_2,y_rot_2)]
-    #
-    # four_list.append(target_points[x_idx_min])
-    # # four_list.append(target_points[x_idx_max])
-    # # four_list.append(target_points[y_idx_min])
-    # # four_list.append((x_rot_2,y_rot_2))
-    # four_list.append(target_points[y_idx_max])
-    # four_list.append((x_rot_2,y_rot_2))
-    #
-    # #
-    # #
-    # for n,pt in enumerate(four_list):
-    #     if n ==2:
-    #         plt.plot(pt[0], pt[1], 'o', markersize=5, color='red')
-    #     else:
-    #         plt.plot(pt[0], pt[1], 'o', markersize=5, color='lawngreen')
-    #
-    # plt.xlim(0,512)
-    # plt.ylim(0,512)
-    # plt.show()
-
-

@@ -26,14 +26,14 @@ from scipy.optimize import leastsq
 from scipy.optimize import minimize
 
 
-def ConvertToSpherical(data, shape, angle=0.329062, xOffset=0, yOffset=0):
+def ConvertToSpherical(data, shape, xAngle=0.329062, yAngle=0.329062, xOffset=0, yOffset=0):
     # Setup scan conversion parameters
     startRadius = 13.603;
     stopRadius = 23.603;
-    startTheta = -angle + xOffset;
-    stopTheta = angle + xOffset;
-    startPhi = -angle + yOffset;
-    stopPhi = angle + yOffset;
+    startTheta = -xAngle + xOffset;
+    stopTheta = xAngle + xOffset;
+    startPhi = -yAngle + yOffset;
+    stopPhi = yAngle + yOffset;
     startX = stopRadius * np.sin(startTheta);
     startY = stopRadius * np.sin(startPhi);
     startZ = startRadius * np.cos(startTheta);
@@ -72,7 +72,7 @@ def ConvertToSpherical(data, shape, angle=0.329062, xOffset=0, yOffset=0):
 
 def func(x):
     radius_ideal, th_ideal, phi_ideal = ConvertToSpherical(ideal_pts, [data.shape[0], data.shape[1], data.shape[2]],
-                                                           angle=x[0], xOffset=x[1], yOffset=x[2])
+                                                           xAngle=x[0], yAngle=x[1], xOffset=x[2], yOffset=x[3])
     mean_radius = np.mean(radius)
 
     # obtained the raw point difference map
@@ -152,18 +152,19 @@ if __name__ == '__main__':
     for k in range(len(xz_pts)):
         ideal_pts.append((xz_pts[k][0], xz_pts[k][1], maxZ))
 
-    offset_range = 30
-    offsets = list(combinations_with_replacement(np.arange(-30, -18), 2))
-    residual = np.zeros(len(offsets))
-    fit_angles = np.zeros(len(offsets))
-
-    bnds = ((0.1, 0.5), (-0.5, 0.5), (-0.5, 0.5))
-    x = (0.3, 0.0, 0.0)
-    minResults = minimize(func, x, method='SLSQP', bounds=bnds)
+    bnds = ((0.1, 0.5), (0.1, 0.5), (-0.5, 0.5), (-0.5, 0.5))
+    x = (0.3, 0.3, 0.0, 0.0)
+    options = {
+                  "ftol": 0.000001,
+                  "eps": 0.00001,
+                  "maxiter": 1000,
+                  "disp": True
+                }
+    minResults = minimize(func, x, method='SLSQP', bounds=bnds, options=options)
 
     # plot best fit
     radius_ideal, th_ideal, phi_ideal = ConvertToSpherical(ideal_pts, [data.shape[0], data.shape[1], data.shape[2]],
-                                                           angle=minResults.x[0], xOffset=minResults.x[1], yOffset=minResults.x[2])
+                                                           xAngle=minResults.x[0], yAngle=minResults.x[1], xOffset=minResults.x[2], yOffset=minResults.x[3])
 
     # obtained the raw point difference map
     spherical_raw_map = np.zeros((512, 512)).astype(np.float32)
@@ -178,7 +179,7 @@ if __name__ == '__main__':
     ax = fig.add_subplot(221, projection='3d')
     ax.scatter(th, phi, radius, s=0.1, alpha=0.1, c='r')
     # ax.scatter(th_ideal, phi_ideal, radius_ideal, s=0.1, alpha=0.1, c='b')
-    ax.set_title('raw points cloud', size=15)
+    ax.set_title('Extracted surface', size=15)
     ax.set_xlabel('th')
     ax.set_ylabel('phi')
     ax.set_zlabel('radius')
@@ -190,7 +191,7 @@ if __name__ == '__main__':
     ax = fig.add_subplot(223, projection='3d')
     # ax.scatter(th, phi, radius, s=0.1, alpha=0.1, c='r')
     ax.scatter(th_ideal, phi_ideal, radius_ideal, s=0.1, alpha=0.1, c='b')
-    ax.set_title('raw points cloud', size=15)
+    ax.set_title('Fitted spherical model surface', size=15)
     ax.set_xlabel('th')
     ax.set_ylabel('phi')
     ax.set_zlabel('radius')
@@ -200,10 +201,12 @@ if __name__ == '__main__':
     ax.set_zlim([radius_low, radius_high])
 
     ax = fig.add_subplot(222, projection='3d')
+    ax.set_title('Difference map', size=15)
     xx, yy = np.meshgrid(np.arange(0, data.shape[1], 1), np.arange(0, data.shape[1], 1))
     surf = ax.plot_wireframe(xx, yy, spherical_raw_map, alpha=0.2)
 
     ax = fig.add_subplot(224)
+    ax.set_title('Difference heat map', size=15)
     im, cbar = heatmap(spherical_raw_map, ax=ax,
                        cmap="hot", cbarlabel='depth variation')
 

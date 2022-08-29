@@ -96,7 +96,8 @@ if __name__ == '__main__':
         }
     )
 
-    data_sets = natsorted(glob.glob('../data/1mW/Flat-Surface/*.oct'))
+    data_sets = natsorted(glob.glob('../data/MEEI/2022.08.27/flat surface/*.oct'))
+
     folder_path = '../data/correction map'
 
     p_factor = 0.55
@@ -139,7 +140,7 @@ if __name__ == '__main__':
     ax.set_xlim([0, data.shape[0]])
     ax.set_ylim([0, data.shape[1]])
     ax.set_zlim([0, data.shape[2]])
-
+    plt.show()
     ####################  Surface Fitting  #######################
     th, phi, radius = zip(*xz_pts)
     th = np.asarray(th) / data.shape[0]
@@ -210,6 +211,7 @@ if __name__ == '__main__':
     im, cbar = heatmap(spherical_raw_map, ax=ax,
                        cmap="hot", cbarlabel='depth variation')
 
+    plt.show()
     ####################  Distortion Map Export  #######################
     # temp_name = data_sets[j].split('/')[-1]
     # file_name = temp_name.split('.')[0]

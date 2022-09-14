@@ -31,7 +31,8 @@ if __name__ == '__main__':
         }
     )
 
-    data_sets = natsorted(glob.glob('../data/1mW/flat surface fixed/*.oct'))
+    data_sets = natsorted(glob.glob('../data/1mW/flat surface/*.oct'))
+
     folder_path = '../data/correction map'
 
     p_factor = np.linspace(0.75, 0.8, len(data_sets))

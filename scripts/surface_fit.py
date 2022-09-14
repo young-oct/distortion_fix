@@ -26,22 +26,113 @@ from scipy.optimize import leastsq
 from scipy.optimize import minimize
 
 
-def ConvertToSpherical(data, shape, xAngle=0.329062, yAngle=0.329062, xOffset=0, yOffset=0):
+def ConvertToSpherical(data, shape, radius = 13.5, xAngle=0.329062, yAngle=0.329062, xOffset=0, yOffset=0, alpha = 0.0, beta = 0.0):
     # Setup scan conversion parameters
-    startRadius = 13.603;
-    stopRadius = 23.603;
-    startTheta = -xAngle + xOffset;
-    stopTheta = xAngle + xOffset;
-    startPhi = -yAngle + yOffset;
-    stopPhi = yAngle + yOffset;
+    startRadius = radius #13.603;
+    stopRadius = radius+10.0 #23.603;
+    # startTheta = -xAngle + xOffset;
+    # stopTheta = xAngle + xOffset;
+    # startPhi = -yAngle + yOffset;
+    # stopPhi = yAngle + yOffset;
+    startTheta = -xAngle
+    stopTheta = xAngle
+    startPhi = -yAngle
+    stopPhi = yAngle
+
     startX = stopRadius * np.sin(startTheta);
     startY = stopRadius * np.sin(startPhi);
     startZ = startRadius * np.cos(startTheta);
     stopX = stopRadius * np.sin(stopTheta);
     stopY = stopRadius * np.sin(stopPhi);
     stopZ = stopRadius;
-    newXSpacing = (stopX - startX) / (shape[0] - 1);
-    newYSpacing = (stopY - startY) / (shape[1] - 1);
+
+    # print("********************************")
+    # print("startX: " + str(startX))
+    # print("stopX: " + str(stopX))
+    # print("startY: " + str(startY))
+    # print("stopY: " + str(stopY))
+    # print("startZ: " + str(startZ))
+    # print("stopZ: " + str(stopZ))
+
+    if beta > 0.0:
+        stopYVec = (
+            0.0,
+            stopRadius * np.sin(stopPhi),
+            stopRadius * np.cos(stopPhi))
+        startYVec = (
+            0.0,
+            stopRadius * np.sin(startPhi) if (beta < stopPhi) else startRadius * np.sin(startPhi),
+            stopRadius * np.cos(startPhi) if (beta < stopPhi) else startRadius * np.cos(startPhi))
+    else:
+        startYVec = (
+            0.0,
+            stopRadius * np.sin(startPhi),
+            stopRadius * np.cos(startPhi))
+        stopYVec = (
+            0.0,
+            startRadius * np.sin(stopPhi) if (beta < startPhi) else stopRadius * np.sin(stopPhi),
+            startRadius * np.cos(stopPhi) if (beta < startPhi) else stopRadius * np.cos(stopPhi))
+
+    if alpha > 0.0:
+        startXVec = (
+            stopRadius * np.sin(startTheta),
+            startRadius * np.sin(startPhi) if (beta < startPhi) else startYVec[1],
+            stopRadius * np.cos(startTheta))
+        stopXVec = (
+            stopRadius * np.sin(stopTheta) if (alpha < stopTheta) else startRadius * np.sin(stopTheta),
+            (stopRadius * np.sin(stopPhi) if (beta < startPhi) else startRadius * np.sin(stopPhi)) if (beta <= 0.0) else (startRadius * np.sin(stopPhi) if (beta < stopPhi) else stopRadius * np.sin(stopPhi)),
+            stopRadius * np.cos(stopTheta) if (alpha < stopTheta) else startRadius * np.cos(stopTheta))
+
+    else:
+        startXVec = (
+            startRadius * np.sin(startRadius) if (alpha < startTheta) else stopRadius * np.sin(startTheta),
+            (stopRadius * np.sin(startPhi) if (beta < startPhi) else startRadius * np.sin(startPhi)) if (beta <= 0.0) else (startRadius * np.sin(startPhi) if (beta < stopPhi) else stopRadius * np.sin(startPhi)),
+            startRadius * np.cos(startTheta) if (alpha < startTheta) else stopRadius * np.cos(startTheta))
+        stopXVec = (
+            stopRadius * np.sin(stopTheta),
+            (startRadius * np.sin(stopPhi) if (beta < startPhi) else (stopRadius * np.sin(stopPhi) if (beta < stopTheta) else startRadius * np.sin(stopPhi))),
+            stopRadius * np.cos(stopTheta))
+
+    tiltXStart = startXVec[0] * np.cos(alpha) - np.abs(startXVec[1] * np.sin(alpha) * np.sin(beta)) - startXVec[2] * np.sin(alpha) * np.cos(beta)
+    tiltXStop = stopXVec[0] * np.cos(alpha) + np.abs(stopXVec[1] * np.sin(alpha) * np.sin(beta)) - stopXVec[2] * np.sin(alpha) * np.cos(beta)
+    tiltYStart = startYVec[1] * np.cos(beta) + startYVec[2] * np.sin(beta)
+    tiltYStop = stopYVec[1] * np.cos(beta) + stopYVec[2] * np.sin(beta)
+
+    if alpha <= 0.0:
+        startZ = startRadius * np.cos(stopTheta) * np.cos(alpha) + startRadius * np.sin(stopTheta) * np.sin(alpha)
+        if alpha > startTheta:
+            stopZ = stopRadius
+        else:
+            stopZ = stopRadius * np.cos(startTheta) * np.cos(alpha) + stopRadius * np.sin(startTheta) * np.sin(alpha)
+
+
+    else:
+        startZ = startRadius * np.cos(startTheta) * np.cos(alpha) + startRadius * np.sin(startTheta) * np.sin(alpha)
+        if alpha > stopTheta:
+            stopZ = (stopRadius * np.cos(stopTheta)) * np.cos(alpha) + (stopRadius * np.sin(stopTheta)) * np.sin(alpha)
+        else:
+            stopZ = stopRadius
+
+    if (beta <= 0.0):
+        startZ = startRadius * np.sin(stopPhi) * np.sin(beta) + startZ * np.cos(beta)
+        if (beta < startPhi):
+            stopZ = stopZ * np.cos(stopPhi) * np.cos(beta) - stopRadius * np.sin(stopPhi) * np.sin(beta)
+
+    else:
+        startZ = startRadius * np.sin(startPhi) * np.sin(beta) + startZ * np.cos(beta);
+        if (beta > stopPhi):
+            stopZ = stopZ * np.cos(startPhi) * np.cos(beta) - stopRadius * np.sin(startPhi) * np.sin(beta)
+
+    # print("tiltXStart: " + str(tiltXStart))
+    # print("tiltXStop: " + str(tiltXStop))
+    # print("tiltYStart: " + str(tiltYStart))
+    # print("tiltYStop: " + str(tiltYStop))
+    # print("tilt startZ: " + str(startZ))
+    # print("tilt stopZ: " + str(stopZ))
+    # print("********************************")
+
+    newXSpacing = (tiltXStop - tiltXStart) / (shape[0] - 1);
+    newYSpacing = (tiltYStop - tiltYStart) / (shape[1] - 1);
     newZSpacing = (stopZ - startZ) / (shape[2] - 1);
     depthSpacing = (stopRadius - startRadius) / (shape[2] - 1);
     thetaSpacing = (stopTheta - startTheta) / (shape[0] - 1);
@@ -50,14 +141,24 @@ def ConvertToSpherical(data, shape, xAngle=0.329062, yAngle=0.329062, xOffset=0,
     xp, yp, zp = zip(*data)
 
     # Calculate new Cartesian coordinates
-    newX = (np.asarray(xp) - xOffset) * newXSpacing + startX
-    newY = (np.asarray(yp) - yOffset) * newYSpacing + startY
+    #newX = (np.asarray(xp) - xOffset) * newXSpacing + startX
+    newX = (np.asarray(xp)) * newXSpacing + tiltXStart
+    #newY = (np.asarray(yp) - yOffset) * newYSpacing + startY
+    newY = (np.asarray(yp)) * newYSpacing + tiltYStart
     newZ = np.asarray(zp) * newZSpacing + startZ
 
+    tiltX = newX * np.cos(alpha) + newZ * np.sin(alpha)
+    tiltY = newX * np.sin(beta) * np.sin(alpha) + newY * np.cos(beta) + newZ * np.sin(beta) * np.cos(alpha)
+    tiltZ = -1.0*newX * np.cos(beta) * np.sin(alpha) + newY * np.sin(beta) + newZ * np.cos(beta) * np.cos(alpha)
+
     # Cartesian to spherical
-    r = np.sqrt(np.square(newX) + np.square(newZ) + np.square(newY))
-    th = np.arctan2(newX, newZ)
-    phi = np.arctan2(newY, newZ)  # np.arcsin(newY / r)
+    # r = np.sqrt(np.square(newX) + np.square(newZ) + np.square(newY))
+    # th = np.arctan2(newX, newZ)
+    # phi = np.arctan2(newY, newZ)  # np.arcsin(newY / r)
+
+    r = np.sqrt(np.square(tiltX) + np.square(tiltZ) + np.square(tiltY))
+    th = np.arctan2(tiltX, tiltZ)
+    phi = np.arctan2(tiltY, tiltZ)  # np.arcsin(newY / r)
 
     # Normalize
     r = ((r - startRadius) / depthSpacing) / (shape[2])
@@ -71,8 +172,13 @@ def ConvertToSpherical(data, shape, xAngle=0.329062, yAngle=0.329062, xOffset=0,
     return r, th, phi
 
 def func(x):
+    # radius_ideal, th_ideal, phi_ideal = ConvertToSpherical(ideal_pts, [data.shape[0], data.shape[1], data.shape[2]],
+    #                                                        radius=x[0], xAngle=x[1], yAngle=x[2], xOffset=x[3], yOffset=x[4],
+    #                                                        alpha=x[5], beta=x[6])
     radius_ideal, th_ideal, phi_ideal = ConvertToSpherical(ideal_pts, [data.shape[0], data.shape[1], data.shape[2]],
-                                                           xAngle=x[0], yAngle=x[1], xOffset=x[2], yOffset=x[3])
+                                                           radius=x[0],
+                                                           xAngle=x[1], yAngle=x[2],
+                                                           alpha=x[3], beta=x[4])
     mean_radius = np.mean(radius)
 
     # obtained the raw point difference map
@@ -114,7 +220,7 @@ if __name__ == '__main__':
     xz_pts = surface_index_reverse(xz_mask, shift)
     # np.delete(xz_pts, np.where(xz_pts))
 
-    cutoff = 258
+    cutoff = 259
     for points in range(len(xz_pts)):
         if (xz_pts[points][2] < cutoff):
             xz_pts[points] = (xz_pts[points][0], xz_pts[points][1], cutoff)
@@ -152,8 +258,9 @@ if __name__ == '__main__':
     for k in range(len(xz_pts)):
         ideal_pts.append((xz_pts[k][0], xz_pts[k][1], maxZ))
 
-    bnds = ((0.1, 0.5), (0.1, 0.5), (-0.5, 0.5), (-0.5, 0.5))
-    x = (0.3, 0.3, 0.0, 0.0)
+    #bnds = ((10.0, 20.0), (0.1, 0.5), (0.1, 0.5), (-0.5, 0.5), (-0.5, 0.5), (-0.5, 0.5), (-0.5, 0.5))
+    bnds = ((10.0, 20.0), (0.1, 0.5), (0.1, 0.5), (-0.5, 0.5), (-0.5, 0.5))
+    x = (14.0, 0.3, 0.3, 0.0, 0.0)
     options = {
                   "ftol": 0.000001,
                   "eps": 0.00001,
@@ -164,7 +271,9 @@ if __name__ == '__main__':
 
     # plot best fit
     radius_ideal, th_ideal, phi_ideal = ConvertToSpherical(ideal_pts, [data.shape[0], data.shape[1], data.shape[2]],
-                                                           xAngle=minResults.x[0], yAngle=minResults.x[1], xOffset=minResults.x[2], yOffset=minResults.x[3])
+                                                           radius=minResults.x[0],
+                                                           xAngle=minResults.x[1], yAngle=minResults.x[2],
+                                                           alpha=minResults.x[3], beta=minResults.x[4])
 
     # obtained the raw point difference map
     spherical_raw_map = np.zeros((512, 512)).astype(np.float32)

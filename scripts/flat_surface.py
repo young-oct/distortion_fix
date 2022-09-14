@@ -13,8 +13,8 @@ from tools.proc import filter_mask,surface_index,sphere_fit,frame_index
 
 if __name__ == '__main__':
 
-    # data_sets = natsorted(glob.glob('../data/1mW/flat surface/*.oct'))
-    data_sets = natsorted(glob.glob('../data/MEEI/flat_surface/*.oct'))
+    data_sets = natsorted(glob.glob('../data/1mW/flat surface/*.oct'))
+    # data_sets = natsorted(glob.glob('../data/MEEI/flat_surface/*.oct'))
 
     data = load_from_oct_file(data_sets[-1], clean=False)
     p_factor = 0.75

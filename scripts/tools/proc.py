@@ -515,7 +515,8 @@ def line_fit(points, order=1):
 
 
 @njit
-def circle_cut(vol: float,cut_ori = (256,256), inner_radius =40, edge_radius = 250) -> float:
+def circle_cut(vol,cut_ori = (256,256),
+               inner_radius =40, edge_radius = 250):
     x, y = cut_ori
     assert vol.ndim == 3
 

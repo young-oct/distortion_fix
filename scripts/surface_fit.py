@@ -26,7 +26,7 @@ from scipy.optimize import leastsq
 from scipy.optimize import minimize
 
 
-def ConvertToSpherical(data, shape, radius = 13.5, xAngle=0.329062, yAngle=0.329062, xOffset=0, yOffset=0, alpha = 0.0, beta = 0.0):
+def ConvertToSpherical(data, shape, radius = 13.5, xAngle=0.329062, yAngle=0.329062, xOffset=0, yOffset=0, alpha = 0.0, beta = 0.0, zOffset = 0):
     # Setup scan conversion parameters
     startRadius = radius #13.603;
     stopRadius = radius+10.0 #23.603;
@@ -139,13 +139,18 @@ def ConvertToSpherical(data, shape, radius = 13.5, xAngle=0.329062, yAngle=0.329
     phiSpacing = (stopPhi - startPhi) / (shape[1] - 1);
 
     xp, yp, zp = zip(*data)
+    xp = (np.asarray(xp))
+    yp = (np.asarray(yp))
+    zp = (np.asarray(zp))
+    # correct for uncertain ideal plane location
+    zp = zp + zOffset
 
     # Calculate new Cartesian coordinates
     #newX = (np.asarray(xp) - xOffset) * newXSpacing + startX
-    newX = (np.asarray(xp)) * newXSpacing + tiltXStart
+    newX = (xp) * newXSpacing + tiltXStart
     #newY = (np.asarray(yp) - yOffset) * newYSpacing + startY
-    newY = (np.asarray(yp)) * newYSpacing + tiltYStart
-    newZ = np.asarray(zp) * newZSpacing + startZ
+    newY = (yp) * newYSpacing + tiltYStart
+    newZ = zp * newZSpacing + startZ
 
     tiltX = newX * np.cos(alpha) + newZ * np.sin(alpha)
     tiltY = newX * np.sin(beta) * np.sin(alpha) + newY * np.cos(beta) + newZ * np.sin(beta) * np.cos(alpha)
@@ -178,7 +183,8 @@ def func(x):
     radius_ideal, th_ideal, phi_ideal = ConvertToSpherical(ideal_pts, [data.shape[0], data.shape[1], data.shape[2]],
                                                            radius=x[0],
                                                            xAngle=x[1], yAngle=x[2],
-                                                           alpha=x[3], beta=x[4])
+                                                           alpha=x[3], beta=x[4],
+                                                           zOffset=x[5])
     mean_radius = np.mean(radius)
 
     # obtained the raw point difference map
@@ -259,8 +265,8 @@ if __name__ == '__main__':
         ideal_pts.append((xz_pts[k][0], xz_pts[k][1], maxZ))
 
     #bnds = ((10.0, 20.0), (0.1, 0.5), (0.1, 0.5), (-0.5, 0.5), (-0.5, 0.5), (-0.5, 0.5), (-0.5, 0.5))
-    bnds = ((10.0, 20.0), (0.1, 0.5), (0.1, 0.5), (-0.5, 0.5), (-0.5, 0.5))
-    x = (14.0, 0.3, 0.3, 0.0, 0.0)
+    bnds = ((10.0, 20.0), (0.1, 0.5), (0.1, 0.5), (-0.5, 0.5), (-0.5, 0.5), (-10, 10))
+    x = (14.0, 0.3, 0.3, 0.0, 0.0, 0.0)
     options = {
                   "ftol": 0.000001,
                   "eps": 0.00001,
@@ -273,7 +279,8 @@ if __name__ == '__main__':
     radius_ideal, th_ideal, phi_ideal = ConvertToSpherical(ideal_pts, [data.shape[0], data.shape[1], data.shape[2]],
                                                            radius=minResults.x[0],
                                                            xAngle=minResults.x[1], yAngle=minResults.x[2],
-                                                           alpha=minResults.x[3], beta=minResults.x[4])
+                                                           alpha=minResults.x[3], beta=minResults.x[4],
+                                                           zOffset=x[5])
 
     # obtained the raw point difference map
     spherical_raw_map = np.zeros((512, 512)).astype(np.float32)
@@ -320,7 +327,7 @@ if __name__ == '__main__':
                        cmap="hot", cbarlabel='depth variation')
 
     ####################  Distortion Map Export  #######################
-    # temp_name = data_sets[j].split('/')[-1]
-    # file_name = temp_name.split('.')[0]
-    # file_path = (os.path.join(folder_path, '%s.bin' % file_name))
-    # export_map(spherical_raw_map, file_path)
+    temp_name = data_sets[0].split('/')[-1]
+    file_name = temp_name.split('.')[0]
+    file_path = (os.path.join(folder_path, '%s.bin' % file_name))
+    export_map(spherical_raw_map, file_path)

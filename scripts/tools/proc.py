@@ -299,7 +299,7 @@ def surface_index(volume, shift=0):
     return peak_loc
 
 
-def clean_removal(data, top=5, radius=230):
+def clean_removal(data, top=0, radius=275):
     '''
 
     :param data: oct 3d data 512x512x330

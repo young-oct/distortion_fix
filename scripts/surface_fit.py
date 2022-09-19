@@ -208,13 +208,13 @@ if __name__ == '__main__':
         }
     )
 
-    data_sets = natsorted(glob.glob('../data/1mW/Flat-Surface/*.oct'))
+    data_sets = natsorted(glob.glob('../data/MEEI/MEEI flat surface-002/*.oct'))
     folder_path = '../data/correction map'
 
-    p_factor = 0.55
+    p_factor = 0.6
     shift = 0
 
-    data = load_from_oct_file_reversed(data_sets[0], clean=False)
+    data = load_from_oct_file_reversed(data_sets[0], clean=True)
     vmin, vmax = int(p_factor * 255), 255
 
     xz_mask = np.zeros_like(data)
@@ -223,16 +223,16 @@ if __name__ == '__main__':
     for i in range(data.shape[0]):
         xz_mask[i, :, :] = filter_mask(data[i, :, :], vmin=vmin, vmax=vmax)
 
-    xz_pts = surface_index_reverse(xz_mask, shift)
+    xz_pts_raw = surface_index_reverse(xz_mask, shift)
     # np.delete(xz_pts, np.where(xz_pts))
-
-    cutoff = 259
-    for points in range(len(xz_pts)):
-        if (xz_pts[points][2] < cutoff):
-            xz_pts[points] = (xz_pts[points][0], xz_pts[points][1], cutoff)
+    xz_pts = []
+    cutoff = 296 #259
+    for points in range(len(xz_pts_raw)):
+        if (xz_pts_raw[points][2] >= cutoff):
+            xz_pts.append(xz_pts_raw[points])
 
     fig = plt.figure(figsize=(16, 9))
-    idx = 256
+    idx = 228
     ax = fig.add_subplot(121)
     ax.imshow(xz_mask[idx, :, :], cmap='gray', vmin=vmin, vmax=vmax)
 
@@ -266,9 +266,9 @@ if __name__ == '__main__':
 
     #bnds = ((10.0, 20.0), (0.1, 0.5), (0.1, 0.5), (-0.5, 0.5), (-0.5, 0.5), (-0.5, 0.5), (-0.5, 0.5))
     bnds = ((10.0, 20.0), (0.1, 0.5), (0.1, 0.5), (-0.5, 0.5), (-0.5, 0.5), (-10, 10))
-    x = (14.0, 0.3, 0.3, 0.0, 0.0, 0.0)
+    x = (14.0, 0.2, 0.2, 0.0, 0.0, 0.0)
     options = {
-                  "ftol": 0.000001,
+                  #"ftol": 0.000001,
                   "eps": 0.00001,
                   "maxiter": 1000,
                   "disp": True
@@ -329,5 +329,5 @@ if __name__ == '__main__':
     ####################  Distortion Map Export  #######################
     temp_name = data_sets[0].split('/')[-1]
     file_name = temp_name.split('.')[0]
-    file_path = (os.path.join(folder_path, '%s.bin' % file_name))
+    file_path = (os.path.join(folder_path, 'RadialCorrectionMap.bin'))
     export_map(spherical_raw_map, file_path)

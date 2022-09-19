@@ -59,7 +59,7 @@ if __name__ == '__main__':
     corrNormalized = (extractedCorrectedGrid - np.amin(extractedCorrectedGrid)) / np.ptp(extractedCorrectedGrid)
 
     grid_y, grid_x = np.mgrid[0:1:512j, 0:1:512j]
-    map = griddata(corrNormalized, uncorrNormalized, (grid_x, grid_y), method='cubic', fill_value=0.0).astype(
+    map = griddata(corrNormalized, uncorrNormalized, (grid_y, grid_x), method='cubic', fill_value=0.0).astype(
         'float32')
     x_correction_map = map[:, :, 0].flatten(order='F')
     y_correction_map = map[:, :, 1].flatten(order='F')

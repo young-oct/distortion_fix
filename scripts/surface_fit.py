@@ -26,14 +26,10 @@ from scipy.optimize import leastsq
 from scipy.optimize import minimize
 
 
-def ConvertToSpherical(data, shape, radius = 13.5, xAngle=0.329062, yAngle=0.329062, xOffset=0, yOffset=0, alpha = 0.0, beta = 0.0, zOffset = 0):
+def ConvertToSpherical(data, shape, radius = 13.5, stopRadius = 23.5, xAngle=0.329062, yAngle=0.329062, xOffset=0, yOffset=0, alpha = 0.0, beta = 0.0, zOffset = 0):
     # Setup scan conversion parameters
     startRadius = radius #13.603;
-    stopRadius = radius+10.0 #23.603;
-    # startTheta = -xAngle + xOffset;
-    # stopTheta = xAngle + xOffset;
-    # startPhi = -yAngle + yOffset;
-    # stopPhi = yAngle + yOffset;
+    stopRadius = stopRadius# + 10.0 #23.603;
     startTheta = -xAngle
     stopTheta = xAngle
     startPhi = -yAngle
@@ -45,14 +41,6 @@ def ConvertToSpherical(data, shape, radius = 13.5, xAngle=0.329062, yAngle=0.329
     stopX = stopRadius * np.sin(stopTheta);
     stopY = stopRadius * np.sin(stopPhi);
     stopZ = stopRadius;
-
-    # print("********************************")
-    # print("startX: " + str(startX))
-    # print("stopX: " + str(stopX))
-    # print("startY: " + str(startY))
-    # print("stopY: " + str(stopY))
-    # print("startZ: " + str(startZ))
-    # print("stopZ: " + str(stopZ))
 
     if beta > 0.0:
         stopYVec = (
@@ -105,7 +93,6 @@ def ConvertToSpherical(data, shape, radius = 13.5, xAngle=0.329062, yAngle=0.329
         else:
             stopZ = stopRadius * np.cos(startTheta) * np.cos(alpha) + stopRadius * np.sin(startTheta) * np.sin(alpha)
 
-
     else:
         startZ = startRadius * np.cos(startTheta) * np.cos(alpha) + startRadius * np.sin(startTheta) * np.sin(alpha)
         if alpha > stopTheta:
@@ -123,14 +110,6 @@ def ConvertToSpherical(data, shape, radius = 13.5, xAngle=0.329062, yAngle=0.329
         if (beta > stopPhi):
             stopZ = stopZ * np.cos(startPhi) * np.cos(beta) - stopRadius * np.sin(startPhi) * np.sin(beta)
 
-    # print("tiltXStart: " + str(tiltXStart))
-    # print("tiltXStop: " + str(tiltXStop))
-    # print("tiltYStart: " + str(tiltYStart))
-    # print("tiltYStop: " + str(tiltYStop))
-    # print("tilt startZ: " + str(startZ))
-    # print("tilt stopZ: " + str(stopZ))
-    # print("********************************")
-
     newXSpacing = (tiltXStop - tiltXStart) / (shape[0] - 1);
     newYSpacing = (tiltYStop - tiltYStart) / (shape[1] - 1);
     newZSpacing = (stopZ - startZ) / (shape[2] - 1);
@@ -146,9 +125,7 @@ def ConvertToSpherical(data, shape, radius = 13.5, xAngle=0.329062, yAngle=0.329
     zp = zp + zOffset
 
     # Calculate new Cartesian coordinates
-    #newX = (np.asarray(xp) - xOffset) * newXSpacing + startX
     newX = (xp) * newXSpacing + tiltXStart
-    #newY = (np.asarray(yp) - yOffset) * newYSpacing + startY
     newY = (yp) * newYSpacing + tiltYStart
     newZ = zp * newZSpacing + startZ
 
@@ -157,13 +134,9 @@ def ConvertToSpherical(data, shape, radius = 13.5, xAngle=0.329062, yAngle=0.329
     tiltZ = -1.0*newX * np.cos(beta) * np.sin(alpha) + newY * np.sin(beta) + newZ * np.cos(beta) * np.cos(alpha)
 
     # Cartesian to spherical
-    # r = np.sqrt(np.square(newX) + np.square(newZ) + np.square(newY))
-    # th = np.arctan2(newX, newZ)
-    # phi = np.arctan2(newY, newZ)  # np.arcsin(newY / r)
-
     r = np.sqrt(np.square(tiltX) + np.square(tiltZ) + np.square(tiltY))
     th = np.arctan2(tiltX, tiltZ)
-    phi = np.arctan2(tiltY, tiltZ)  # np.arcsin(newY / r)
+    phi = np.arctan2(tiltY, tiltZ)
 
     # Normalize
     r = ((r - startRadius) / depthSpacing) / (shape[2])
@@ -177,14 +150,11 @@ def ConvertToSpherical(data, shape, radius = 13.5, xAngle=0.329062, yAngle=0.329
     return r, th, phi
 
 def func(x):
-    # radius_ideal, th_ideal, phi_ideal = ConvertToSpherical(ideal_pts, [data.shape[0], data.shape[1], data.shape[2]],
-    #                                                        radius=x[0], xAngle=x[1], yAngle=x[2], xOffset=x[3], yOffset=x[4],
-    #                                                        alpha=x[5], beta=x[6])
     radius_ideal, th_ideal, phi_ideal = ConvertToSpherical(ideal_pts, [data.shape[0], data.shape[1], data.shape[2]],
-                                                           radius=x[0],
-                                                           xAngle=x[1], yAngle=x[2],
-                                                           alpha=x[3], beta=x[4],
-                                                           zOffset=x[5])
+                                                           radius=x[0], stopRadius=x[1],
+                                                           xAngle=x[2], yAngle=x[3],
+                                                           alpha=x[4], beta=x[5],
+                                                           zOffset=x[6])
     mean_radius = np.mean(radius)
 
     # obtained the raw point difference map
@@ -192,8 +162,7 @@ def func(x):
     for i in range(len(xz_pts)):
         map[xz_pts[i][0], xz_pts[i][1]] = radius[i] - radius_ideal[i]
 
-    map = gaussian_filter(map, sigma=4)
-
+    #map = gaussian_filter(map, sigma=4)
     return np.sum(np.abs(map))
 
 
@@ -208,10 +177,10 @@ if __name__ == '__main__':
         }
     )
 
-    data_sets = natsorted(glob.glob('../data/MEEI/MEEI flat surface-002/*.oct'))
+    data_sets = natsorted(glob.glob('../data/MEEI/2022.1.09(MEEI)/flat surface/*.oct'))
     folder_path = '../data/correction map'
 
-    p_factor = 0.6
+    p_factor = 0.65
     shift = 0
 
     data = load_from_oct_file_reversed(data_sets[0], clean=True)
@@ -226,13 +195,13 @@ if __name__ == '__main__':
     xz_pts_raw = surface_index_reverse(xz_mask, shift)
     # np.delete(xz_pts, np.where(xz_pts))
     xz_pts = []
-    cutoff = 296 #259
+    cutoff = 288#269
     for points in range(len(xz_pts_raw)):
         if (xz_pts_raw[points][2] >= cutoff):
             xz_pts.append(xz_pts_raw[points])
 
     fig = plt.figure(figsize=(16, 9))
-    idx = 228
+    idx = 256
     ax = fig.add_subplot(121)
     ax.imshow(xz_mask[idx, :, :], cmap='gray', vmin=vmin, vmax=vmax)
 
@@ -264,11 +233,10 @@ if __name__ == '__main__':
     for k in range(len(xz_pts)):
         ideal_pts.append((xz_pts[k][0], xz_pts[k][1], maxZ))
 
-    #bnds = ((10.0, 20.0), (0.1, 0.5), (0.1, 0.5), (-0.5, 0.5), (-0.5, 0.5), (-0.5, 0.5), (-0.5, 0.5))
-    bnds = ((10.0, 20.0), (0.1, 0.5), (0.1, 0.5), (-0.5, 0.5), (-0.5, 0.5), (-10, 10))
-    x = (14.0, 0.2, 0.2, 0.0, 0.0, 0.0)
+    bnds = ((10.0, 18.0), (20.0, 30.0), (0.1, 0.5), (0.1, 0.5), (-0.5, 0.5), (-0.5, 0.5), (-10, 10))
+    x = (11.0, 24.0, 0.3, 0.3, 0.0, 0.0, 3.0)
     options = {
-                  #"ftol": 0.000001,
+                  "ftol": 0.000001,
                   "eps": 0.00001,
                   "maxiter": 1000,
                   "disp": True
@@ -277,17 +245,20 @@ if __name__ == '__main__':
 
     # plot best fit
     radius_ideal, th_ideal, phi_ideal = ConvertToSpherical(ideal_pts, [data.shape[0], data.shape[1], data.shape[2]],
-                                                           radius=minResults.x[0],
-                                                           xAngle=minResults.x[1], yAngle=minResults.x[2],
-                                                           alpha=minResults.x[3], beta=minResults.x[4],
-                                                           zOffset=x[5])
+                                                           radius=minResults.x[0], stopRadius=minResults.x[1],
+                                                           xAngle=minResults.x[2], yAngle=minResults.x[3],
+                                                           alpha=minResults.x[4], beta=minResults.x[5],
+                                                           zOffset=x[6])
 
     # obtained the raw point difference map
     spherical_raw_map = np.zeros((512, 512)).astype(np.float32)
     for i in range(len(xz_pts)):
         spherical_raw_map[xz_pts[i][0], xz_pts[i][1]] = radius[i] - radius_ideal[i]
 
-    spherical_raw_map = gaussian_filter(spherical_raw_map, sigma=4)
+    spherical_raw_map -= np.mean(spherical_raw_map)
+    spherical_raw_map = gaussian_filter(spherical_raw_map, sigma=2)
+    #spherical_raw_map[spherical_raw_map <= (np.amin(spherical_raw_map) + 0.005)] = np.mean(spherical_raw_map)
+
 
     ####################  Plot surface fit  #######################
     fig = plt.figure(figsize=(16, 9))

@@ -132,10 +132,14 @@ if __name__ == '__main__':
         ax.set_zlabel('z')
         ax.set_xlim([0, data.shape[0]])
         ax.set_ylim([0, data.shape[1]])
+
         z_low, z_high = int(z_mean - 30), int(z_mean + 30)
         ax.set_zlim([z_low, z_high])
 
         ax = fig.add_subplot(3, 2, 3, projection='3d')
+        ax.set_xlabel('x')
+        ax.set_ylabel('y')
+        ax.set_zlabel('z')
         cut_index = raw_map > 0.0
 
         surf = ax.plot_wireframe(xx, yy, raw_map, alpha=0.2)
@@ -154,9 +158,28 @@ if __name__ == '__main__':
         plane_fit(xz_pts, order=1).plot(ax, z_low, z_high)
 
         ax = fig.add_subplot(3, 2, 4, projection='3d')
-        dl_map = l_plane - raw_map#z_ideal
-        surf = ax.plot_wireframe(xx, yy, dl_map, alpha=0.2)
 
+        #raw_map = np.where(raw_map <= 0.0, raw_map, l_plane)
+
+        raw_map = gaussian_filter(raw_map, sigma=4)
+        dl_map = l_plane - raw_map#z_ideal
+        dl_map = np.where(np.abs(l_plane) == np.abs(dl_map), 0.0, dl_map)
+
+        dl_map_mean = dl_map[dl_map>0.0].mean()
+
+        dl_map[dl_map==0.0] = dl_map_mean
+
+        dl_map = np.abs((dl_map - dl_map_mean) / data.shape[2])
+
+        max_depth_error = np.amax(dl_map)
+        mean_depth_error = np.mean(dl_map)
+        std_depth_error = np.std(dl_map)
+        var_depth_error = np.var(dl_map)
+
+        surf = ax.plot_wireframe(xx, yy, dl_map, alpha=0.2)
+        ax.set_xlabel('x')
+        ax.set_ylabel('y')
+        ax.set_zlabel('z')
         ax = fig.add_subplot(3, 2, 6)
         im, cbar = heatmap(dl_map.T, ax=ax,
                            cmap="hot", cbarlabel='depth variation')

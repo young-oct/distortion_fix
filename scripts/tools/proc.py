@@ -140,7 +140,7 @@ class plane_fit:
 
     def __init__(self, pts, order):
 
-        self.x, self.y, self.z = zip(*pts)
+        self.y, self.x, self.z = zip(*pts)
         self.x = np.array(self.x)
         self.y = np.array(self.y)
         self.z = np.array(self.z)
@@ -231,7 +231,7 @@ class plane_fit:
 
     def plot(self, ax, low=0, high=330):
 
-        ax.scatter(self.x, self.y, self.z, zdir='z', s=0.1, c='b', alpha=0.3, rasterized=True)
+        ax.scatter(self.x, self.y, self.z, s=0.5, c='r', alpha=0.5)
         ax.plot_surface(self.x_plane, self.y_plane, self.zc, color='r', alpha=0.5)
 
         ax.set_zlabel('z')
@@ -337,7 +337,7 @@ def binary_mask(slice, vmin, vmax):
 
 def filter_mask(slice, vmin, vmax):
     mask = binary_mask(slice, vmin, vmax)
-    mask = median_filter(mask, size=10)
+    mask = median_filter(mask, size=7)
     mask = gaussian_filter(mask, sigma=0.2)
     return mask
 

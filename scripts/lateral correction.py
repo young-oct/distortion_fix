@@ -28,7 +28,7 @@ def ExtractDotGrid(grid):
     return extractedGrid
 
 if __name__ == '__main__':
-    grids = natsorted(glob.glob('../data/correction map/lateral correction/grids/MEEI-v4 - angle-deviation/*.png'))
+    grids = natsorted(glob.glob('../data/correction map/lateral correction/grids/MEEI-v5 - nDwell-20/*.png'))
 
     uncorrectedGrid = (io.imread(grids[-1],as_gray=True)*255).astype(np.uint8)
     correctedGrid = (io.imread(grids[0], as_gray=True) * 255).astype(np.uint8)
@@ -57,8 +57,9 @@ if __name__ == '__main__':
     corr_ax.scatter(extractedCorrectedGrid[:, 0], extractedCorrectedGrid[:, 1])
 
     # Normalize dot grids
-    uncorrNormalized = (extractedUncorrectedGrid - np.amin(extractedUncorrectedGrid)) / np.ptp(extractedUncorrectedGrid)
-    corrNormalized = (extractedCorrectedGrid - np.amin(extractedCorrectedGrid)) / np.ptp(extractedCorrectedGrid)
+    correction_factor = 20;
+    uncorrNormalized = (extractedUncorrectedGrid - (np.amin(extractedUncorrectedGrid) - correction_factor)) / ((np.amax(extractedUncorrectedGrid) + correction_factor) - (np.amin(extractedUncorrectedGrid) - correction_factor))#np.ptp(extractedUncorrectedGrid)
+    corrNormalized = (extractedCorrectedGrid - (np.amin(extractedCorrectedGrid) - correction_factor)) / ((np.amax(extractedCorrectedGrid) + correction_factor) - (np.amin(extractedCorrectedGrid) - correction_factor))#np.ptp(extractedCorrectedGrid)
 
     grid_y, grid_x = np.mgrid[0:1:512j, 0:1:512j]
     map = griddata(corrNormalized, uncorrNormalized, (grid_y, grid_x), method='cubic', fill_value=0.0).astype(

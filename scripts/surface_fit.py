@@ -25,6 +25,8 @@ from itertools import combinations_with_replacement
 from scipy.optimize import leastsq
 from scipy.optimize import minimize
 
+from pylab import *
+from mpl_toolkits.mplot3d import Axes3D
 
 def ConvertToSpherical(data, shape, radius = 13.5, stopRadius = 23.5, xAngle=0.329062, yAngle=0.329062, xOffset=0, yOffset=0, alpha = 0.0, beta = 0.0, zOffset = 0):
     # Setup scan conversion parameters
@@ -195,7 +197,7 @@ if __name__ == '__main__':
     xz_pts_raw = surface_index_reverse(xz_mask, shift)
     # np.delete(xz_pts, np.where(xz_pts))
     xz_pts = []
-    cutoff = 288#269
+    cutoff = 289#269
     for points in range(len(xz_pts_raw)):
         if (xz_pts_raw[points][2] >= cutoff):
             xz_pts.append(xz_pts_raw[points])
@@ -259,7 +261,6 @@ if __name__ == '__main__':
     spherical_raw_map = gaussian_filter(spherical_raw_map, sigma=2)
     #spherical_raw_map[spherical_raw_map <= (np.amin(spherical_raw_map) + 0.005)] = np.mean(spherical_raw_map)
 
-
     ####################  Plot surface fit  #######################
     fig = plt.figure(figsize=(16, 9))
     mean_radius = np.mean(radius)
@@ -302,3 +303,156 @@ if __name__ == '__main__':
     file_name = temp_name.split('.')[0]
     file_path = (os.path.join(folder_path, 'RadialCorrectionMap.bin'))
     export_map(spherical_raw_map, file_path)
+
+    ##################### Paper figures ##########################
+    x, y, z = zip(*ideal_pts)
+    x = np.asarray(x)
+    y = np.asarray(y)
+    z = np.asarray(z)
+
+    fig = plt.figure(figsize=(16, 10))
+    ax = fig.add_subplot(111, projection='3d')
+
+    # Plot
+    ax.scatter(x, y, z, s=0.1, alpha=0.4, c='k')
+    # ax.set_title('Ideal Flat Surface', size=26, y=1.01)
+    ax.set_xlabel('X', size=20, labelpad=10)
+    ax.set_ylabel('Y', size=20, labelpad=10)
+    ax.set_zlabel('Z', size=20, labelpad=14)
+
+    # Plot limits
+    mean_radius = maxZ
+    radius_low, radius_high = mean_radius - 5, mean_radius + 5
+    ax.set_xlim([0, data.shape[0]])
+    ax.set_ylim([0, data.shape[1]])
+    ax.set_zlim([radius_low, radius_high])
+    ax.xaxis.set_rotate_label(False)
+    ax.zaxis.set_tick_params(pad=7)
+
+    ax.xaxis.set_tick_params(labelsize=15)
+    ax.yaxis.set_tick_params(labelsize=15)
+    ax.zaxis.set_tick_params(labelsize=15)
+    #plt.autoscale()
+    fig.tight_layout()
+
+    # Save figure
+    pic_dis = '../plots/ideal_surface_no_title.PNG'
+    # plt.axis('off')
+
+    fig.savefig(pic_dis, dpi=600,
+                transparent=True,
+                bbox_inches='tight', pad_inches=0)
+
+    ##################### Paper figures ##########################
+    fig = plt.figure(figsize=(16, 10))
+    ax = fig.add_subplot(111, projection='3d')
+
+    # # Colour map
+    colmap = cm.ScalarMappable(cmap=cm.hot)
+    colmap.set_array(radius)
+    colours = colmap.to_rgba(radius)[:,0:3]
+    # cb = fig.colorbar(colmap, shrink=0.8, format=FormatStrFormatter("%.2f"))
+    # cb.ax.tick_params(labelsize=15)
+    # cb.ax.locator_params(nbins=5)
+
+    # Plot
+    ax.scatter(th, phi, radius, s=0.1, alpha=0.5, c=colours)
+    # ax.set_title('Extracted Surface', size=26,y=1.01)
+    ax.set_xlabel('Theta', size= 20, labelpad = 10)
+    ax.set_ylabel('Phi', size=20, labelpad = 10)
+    ax.set_zlabel('Radius', size=20, labelpad = 14)
+
+    # Plot limits
+    mean_radius = np.mean(radius)
+    radius_low, radius_high = mean_radius - 0.1, mean_radius + 0.1
+    ax.set_xlim([0.0, 1.0])
+    ax.set_ylim([0.0, 1.0])
+    ax.set_zlim([radius_low, radius_high])
+    ax.xaxis.set_rotate_label(False)
+    ax.zaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    ax.zaxis.set_tick_params(pad=7)
+
+    ax.xaxis.set_tick_params(labelsize=15)
+    ax.yaxis.set_tick_params(labelsize=15)
+    ax.zaxis.set_tick_params(labelsize=15)
+
+    fig.tight_layout()
+
+    # Save figure
+    pic_dis = '../plots/extracted_surface_no_title.PNG'
+    #plt.axis('off')
+
+    fig.savefig(pic_dis, dpi=600,
+                transparent=True,
+                bbox_inches='tight', pad_inches=0)
+
+    ##################### Paper figures ##########################
+    fig = plt.figure(figsize=(16, 10))
+    ax = fig.add_subplot(111, projection='3d')
+
+    # Colour map
+    colmap = cm.ScalarMappable(cmap=cm.hot)
+    colmap.set_array(radius_ideal)
+    colours = colmap.to_rgba(radius_ideal)[:, 0:3]
+    # cb = fig.colorbar(colmap, shrink=0.8, format=FormatStrFormatter("%.2f"))
+    # cb.ax.tick_params(labelsize=15)
+    # cb.ax.locator_params(nbins=5)
+
+    # Plot
+    ax.scatter(th_ideal, phi_ideal, radius_ideal, s=0.1, alpha=0.5, c=colours)
+    # ax.set_title('Fitted Surface', size=26, y=1.01)
+    ax.set_xlabel('Theta', size=20, labelpad=10)
+    ax.set_ylabel('Phi', size=20, labelpad=10)
+    ax.set_zlabel('Radius', size=20, labelpad=14)
+
+    # Plot limits
+    mean_radius = np.mean(radius)
+    radius_low, radius_high = mean_radius - 0.1, mean_radius + 0.1
+    ax.set_xlim([0.0, 1.0])
+    ax.set_ylim([0.0, 1.0])
+    ax.set_zlim([radius_low, radius_high])
+    ax.xaxis.set_rotate_label(False)
+    ax.zaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    ax.zaxis.set_tick_params(pad=7)
+
+    ax.xaxis.set_tick_params(labelsize=15)
+    ax.yaxis.set_tick_params(labelsize=15)
+    ax.zaxis.set_tick_params(labelsize=15)
+
+    fig.tight_layout()
+
+    # Save figure
+    pic_dis = '../plots/fitted_surface_no_title.PNG'
+    # plt.axis('off')
+
+    fig.savefig(pic_dis, dpi=600,
+                transparent=True,
+                bbox_inches='tight', pad_inches=0)
+
+    ##################### Paper figures ##########################
+    fig = plt.figure(figsize=(16, 10))
+    ax = fig.add_subplot(111)
+    # ax.set_title('Residual Error', size=26)
+
+    # Plot the heatmap
+    im = ax.imshow(np.abs(spherical_raw_map*100), cmap="hot")
+
+    # Create colorbar
+    cbar = ax.figure.colorbar(im)
+    cbar.ax.set_ylabel('Absolute Depth Error (%)', rotation=-90, va="bottom", size=20)
+    cbar.ax.tick_params(labelsize=15)
+    cbar.ax.locator_params(nbins=6)
+
+    # Turn spines off and create white grid.
+    ax.spines[:].set_visible(False)
+    ax.set_axis_off()
+
+    fig.tight_layout()
+
+    # Save figure
+    pic_dis = '../plots/residual_error_no_title.pdf'
+    # plt.axis('off')
+
+    fig.savefig(pic_dis, dpi=600,
+                transparent=True,
+                bbox_inches='tight', pad_inches=0)

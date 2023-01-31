@@ -153,31 +153,43 @@ if __name__ == '__main__':
             'mathtext.fontset': 'stix',
         }
     )
-
+    ################################################# Flat Surface Corrected ###########################################
     # error list (corrected)
     mean_err_list = []
     std_err_list = []
 
-    data_sets = natsorted(glob.glob('D:/Distoriton correction/2022.1.09(MEEI)/Spiral/MDL-85/flat surface - deconv - corrected/*.oct'))
-
+    data_sets = natsorted(glob.glob(r'D:\Paper Datasets\residual_depth_error\flat surface - deconv - corrected/*.oct'))
     CalculateResidualError(mean_err_list, std_err_list, data_sets)
 
     # Convert to numpy arrays
     mean_err_list = np.asarray(mean_err_list)
     std_err_list = np.asarray(std_err_list)
 
+    ################################################### Flat Surface ###################################################
     # error list (uncorrected)
     mean_err_list_uncorr = []
     std_err_list_uncorr = []
 
-    data_sets_uncorr = natsorted(glob.glob('D:/Distoriton correction/2022.1.09(MEEI)/Spiral/MDL-85/flat surface - deconv/*.oct'))
-
+    data_sets_uncorr = natsorted(glob.glob(r'D:\Paper Datasets\residual_depth_error\flat surface - deconv/*.oct'))
     CalculateResidualError(mean_err_list_uncorr, std_err_list_uncorr, data_sets_uncorr)
 
     # Convert to numpy arrays
     mean_err_list_uncorr = np.asarray(mean_err_list_uncorr)
     std_err_list_uncorr = np.asarray(std_err_list_uncorr)
 
+    ################################################# Flat Surface Corrected - no lateral ###############################
+    # error list (uncorrected)
+    mean_err_list_corr_no_lat = []
+    std_err_list_corr_no_lat = []
+
+    data_sets_corr_no_lat = natsorted(glob.glob(r'D:\Paper Datasets\residual_depth_error\flat surface - deconv - corrected - no lateral correction/*.oct'))
+    CalculateResidualError(mean_err_list_corr_no_lat, std_err_list_corr_no_lat, data_sets_corr_no_lat)
+
+    # Convert to numpy arrays
+    mean_err_list_corr_no_lat = np.asarray(mean_err_list_corr_no_lat)
+    std_err_list_corr_no_lat = np.asarray(std_err_list_corr_no_lat)
+
+    ####################################################################################################################
     # Plot residual error results
     Depth_res = 40.0
     Depth_dim = 330
@@ -188,6 +200,8 @@ if __name__ == '__main__':
     corrected_depth_std_error = Depth_res*Depth_dim*std_err_list[:,1]
     uncorrected_depth_mean_error = Depth_res*Depth_dim*mean_err_list_uncorr[:,1]
     uncorrected_depth_std_error = Depth_res*Depth_dim*std_err_list_uncorr[:,1]
+    no_lat_depth_mean_error = Depth_res*Depth_dim*mean_err_list_corr_no_lat[:,1]
+    no_lat_depth_std_error = Depth_res*Depth_dim*std_err_list_corr_no_lat[:,1]
 
     # fig = plt.figure(figsize=(16, 9))
     # ax = fig.add_subplot(1, 1, 1)
@@ -205,10 +219,14 @@ if __name__ == '__main__':
 
     ###################### Bar plot #############################
     # Construct Pandas data  frame
-    surface = ["Corrected" for x in range(len(corrected_depth_mean_error))] + ["Uncorrected" for x in range(len(corrected_depth_mean_error))]
-    depth_index_bars = np.concatenate((np.flip(depth_index), np.flip(depth_index)))
-    mean = np.concatenate((np.flip(corrected_depth_mean_error), np.flip(uncorrected_depth_mean_error)))
-    std = np.concatenate((np.flip(corrected_depth_std_error), np.flip(uncorrected_depth_std_error)))
+    surface = ["Corrected" for x in range(len(corrected_depth_mean_error))] + \
+              ["Corrected no Lateral" for x in range(len(corrected_depth_mean_error))] + \
+              ["Uncorrected" for x in range(len(corrected_depth_mean_error))]
+
+
+    depth_index_bars = np.concatenate((np.flip(depth_index), np.flip(depth_index), np.flip(depth_index)))
+    mean = np.concatenate((np.flip(corrected_depth_mean_error), np.flip(no_lat_depth_mean_error), np.flip(uncorrected_depth_mean_error),))
+    std = np.concatenate((np.flip(corrected_depth_std_error), np.flip(no_lat_depth_std_error), np.flip(uncorrected_depth_std_error)))
 
     dataFrame = pd.DataFrame({'surface' : surface,
                          'depth_index' : depth_index_bars,
@@ -217,7 +235,7 @@ if __name__ == '__main__':
 
     # Specify desired colours
     sns.set(style="whitegrid")
-    colors = ["#14CCEB", "#EB3314"]
+    colors = ["#14CCEB", "#00FF00", "#EB3314"]
     customPalette = sns.set_palette(sns.color_palette(colors))
 
     # Create bar plot
@@ -228,7 +246,7 @@ if __name__ == '__main__':
         palette=customPalette, alpha=.6 )
 
     # Drawing a horizontal line at point 1.25
-    g.axhline(Depth_res, ls='--', c='k',alpha=0.2,label='test')
+    g.axhline(Depth_res, ls='--', c='k',alpha=0.2)
     trans = transforms.blended_transform_factory(ax.get_yticklabels()[0].get_transform(), ax.transData)
     ax.text(0, Depth_res, "{:.0f}".format(Depth_res),
             color="k", alpha=0.2, transform=trans,ha="right", va="center")
@@ -242,9 +260,10 @@ if __name__ == '__main__':
     # Draw error bars
     x_coords = [p.get_x() + 0.5 * p.get_width() for p in g.patches]
     y_coords = [p.get_height() for p in g.patches]
-    half_len = int(len(x_coords)/2)
+    half_len = int(len(x_coords)/3)
     ax.errorbar(x=x_coords[0:half_len], y=y_coords[0:half_len], yerr=dataFrame["std"][0:half_len], fmt="none", c="#14CCEB")
-    ax.errorbar(x=x_coords[half_len:], y=y_coords[half_len:], yerr=dataFrame["std"][half_len:], fmt="none", c="#EB3314")
+    ax.errorbar(x=x_coords[half_len:2*half_len], y=y_coords[half_len:2*half_len], yerr=dataFrame["std"][half_len:2*half_len], fmt="none", c="#00FF00")
+    ax.errorbar(x=x_coords[2*half_len:], y=y_coords[2*half_len:], yerr=dataFrame["std"][2*half_len:], fmt="none", c="#EB3314")
 
     # Format plot
     ax.legend(loc='upper left')
@@ -252,3 +271,11 @@ if __name__ == '__main__':
     ax.set_xlabel('Surface Depth [mm]', fontweight='bold', fontsize=15)
     ax.set_ylabel('Absolute Mean Depth Error [um]', fontweight='bold', fontsize=15)
     ax.set_ylim(ymin=0)
+
+    # Save figure
+    pic_dis = '../plots/residual_depth_error.PNG'
+    # plt.axis('off')
+
+    fig.savefig(pic_dis, dpi=300,
+                transparent=True,
+                bbox_inches='tight', pad_inches=0)

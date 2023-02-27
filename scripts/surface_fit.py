@@ -28,10 +28,13 @@ from scipy.optimize import minimize
 from pylab import *
 from mpl_toolkits.mplot3d import Axes3D
 
+# Measured imaging depth by Rob and Young
+imaging_depth = 10.89
+
 def ConvertToSpherical(data, shape, radius = 13.5, stopRadius = 23.5, xAngle=0.329062, yAngle=0.329062, xOffset=0, yOffset=0, alpha = 0.0, beta = 0.0, zOffset = 0):
     # Setup scan conversion parameters
     startRadius = radius #13.603;
-    stopRadius = stopRadius# + 10.0 #23.603;
+    stopRadius = radius + imaging_depth #23.603;
     startTheta = -xAngle
     stopTheta = xAngle
     startPhi = -yAngle
@@ -112,12 +115,12 @@ def ConvertToSpherical(data, shape, radius = 13.5, stopRadius = 23.5, xAngle=0.3
         if (beta > stopPhi):
             stopZ = stopZ * np.cos(startPhi) * np.cos(beta) - stopRadius * np.sin(startPhi) * np.sin(beta)
 
-    newXSpacing = (tiltXStop - tiltXStart) / (shape[0] - 1);
-    newYSpacing = (tiltYStop - tiltYStart) / (shape[1] - 1);
-    newZSpacing = (stopZ - startZ) / (shape[2] - 1);
-    depthSpacing = (stopRadius - startRadius) / (shape[2] - 1);
-    thetaSpacing = (stopTheta - startTheta) / (shape[0] - 1);
-    phiSpacing = (stopPhi - startPhi) / (shape[1] - 1);
+    newXSpacing = (tiltXStop - tiltXStart) / (shape[0]);
+    newYSpacing = (tiltYStop - tiltYStart) / (shape[1]);
+    newZSpacing = (stopZ - startZ) / (shape[2]);
+    depthSpacing = (stopRadius - startRadius) / (shape[2]);
+    thetaSpacing = (stopTheta - startTheta) / (shape[0]);
+    phiSpacing = (stopPhi - startPhi) / (shape[1]);
 
     xp, yp, zp = zip(*data)
     xp = (np.asarray(xp))
@@ -141,7 +144,7 @@ def ConvertToSpherical(data, shape, radius = 13.5, stopRadius = 23.5, xAngle=0.3
     phi = np.arctan2(tiltY, tiltZ)
 
     # Normalize
-    r = ((r - startRadius) / depthSpacing) / (shape[2])
+    #r = ((r - startRadius) / depthSpacing) / (shape[2])
     th = ((th - startTheta) / thetaSpacing) / (shape[0])
     phi = ((phi - startPhi) / phiSpacing) / (shape[1])
 
@@ -153,19 +156,22 @@ def ConvertToSpherical(data, shape, radius = 13.5, stopRadius = 23.5, xAngle=0.3
 
 def func(x):
     radius_ideal, th_ideal, phi_ideal = ConvertToSpherical(ideal_pts, [data.shape[0], data.shape[1], data.shape[2]],
-                                                           radius=x[0], stopRadius=x[1],
-                                                           xAngle=x[2], yAngle=x[3],
-                                                           alpha=x[4], beta=x[5],
-                                                           zOffset=x[6])
+                                                           radius=x[0],
+                                                           xAngle=x[1], yAngle=x[2],
+                                                           alpha=x[3], beta=x[4],
+                                                           zOffset=x[5])
     mean_radius = np.mean(radius)
 
     # obtained the raw point difference map
     map = np.zeros((512, 512)).astype(np.float32)
+    # for i in range(len(xz_pts)):
+    #     map[xz_pts[i][0], xz_pts[i][1]] = radius[i] - radius_ideal[i]
     for i in range(len(xz_pts)):
-        map[xz_pts[i][0], xz_pts[i][1]] = radius[i] - radius_ideal[i]
+        map[xz_pts[i][0], xz_pts[i][1]] = ((radius[i]*(imaging_depth)+x[0]) - radius_ideal[i])**2
 
     #map = gaussian_filter(map, sigma=4)
-    return np.sum(np.abs(map))
+    #return np.sum(np.abs(map))
+    return np.sum(map)
 
 
 if __name__ == '__main__':
@@ -219,9 +225,9 @@ if __name__ == '__main__':
     ax.set_xlabel('x')
     ax.set_ylabel('y')
     ax.set_zlabel('z')
-    ax.set_xlim([0, data.shape[0]])
-    ax.set_ylim([0, data.shape[1]])
-    ax.set_zlim([0, data.shape[2]])
+    #ax.set_xlim([0, data.shape[0]])
+    #ax.set_ylim([0, data.shape[1]])
+    #ax.set_zlim([0, data.shape[2]])
 
     ####################  Surface Fitting  #######################
     th, phi, radius = zip(*xz_pts)
@@ -235,11 +241,11 @@ if __name__ == '__main__':
     for k in range(len(xz_pts)):
         ideal_pts.append((xz_pts[k][0], xz_pts[k][1], maxZ))
 
-    bnds = ((10.0, 18.0), (20.0, 30.0), (0.1, 0.5), (0.1, 0.5), (-0.5, 0.5), (-0.5, 0.5), (-10, 10))
-    x = (11.0, 24.0, 0.3, 0.3, 0.0, 0.0, 3.0)
+    bnds = ((1.0, 18.0), (0.1, 0.5), (0.1, 0.5), (-0.5, 0.5), (-0.5, 0.5), (-10, 10))
+    x = (8.5, 0.27, 0.28, -6.0e-03,  -6.0e-03, 3.0)
     options = {
-                  "ftol": 0.000001,
-                  "eps": 0.00001,
+                  "ftol": 0.0000001,
+                  "eps": 0.000001,
                   "maxiter": 1000,
                   "disp": True
                 }
@@ -247,10 +253,13 @@ if __name__ == '__main__':
 
     # plot best fit
     radius_ideal, th_ideal, phi_ideal = ConvertToSpherical(ideal_pts, [data.shape[0], data.shape[1], data.shape[2]],
-                                                           radius=minResults.x[0], stopRadius=minResults.x[1],
-                                                           xAngle=minResults.x[2], yAngle=minResults.x[3],
-                                                           alpha=minResults.x[4], beta=minResults.x[5],
-                                                           zOffset=x[6])
+                                                           radius=minResults.x[0],
+                                                           xAngle=minResults.x[1], yAngle=minResults.x[2],
+                                                           alpha=minResults.x[3], beta=minResults.x[4],
+                                                           zOffset=x[5])
+
+    # Convert Radius in physical units
+    radius = radius*(imaging_depth)+minResults.x[0]
 
     # obtained the raw point difference map
     spherical_raw_map = np.zeros((512, 512)).astype(np.float32)
@@ -271,10 +280,10 @@ if __name__ == '__main__':
     ax.set_xlabel('th')
     ax.set_ylabel('phi')
     ax.set_zlabel('radius')
-    radius_low, radius_high = mean_radius - 0.1, mean_radius + 0.1
+    #radius_low, radius_high = mean_radius - 0.1, mean_radius + 0.1
     ax.set_xlim([0.0, 1.0])
     ax.set_ylim([0.0, 1.0])
-    ax.set_zlim([radius_low, radius_high])
+    #ax.set_zlim([radius_low, radius_high])
 
     ax = fig.add_subplot(223, projection='3d')
     # ax.scatter(th, phi, radius, s=0.1, alpha=0.1, c='r')
@@ -283,19 +292,19 @@ if __name__ == '__main__':
     ax.set_xlabel('th')
     ax.set_ylabel('phi')
     ax.set_zlabel('radius')
-    radius_low, radius_high = mean_radius - 0.1, mean_radius + 0.1
+    #radius_low, radius_high = mean_radius - 0.1, mean_radius + 0.1
     ax.set_xlim([0.0, 1.0])
     ax.set_ylim([0.0, 1.0])
-    ax.set_zlim([radius_low, radius_high])
+    #ax.set_zlim([radius_low, radius_high])
 
     ax = fig.add_subplot(222, projection='3d')
     ax.set_title('Difference map', size=15)
     xx, yy = np.meshgrid(np.arange(0, data.shape[1], 1), np.arange(0, data.shape[1], 1))
-    surf = ax.plot_wireframe(xx, yy, spherical_raw_map, alpha=0.2)
+    surf = ax.plot_wireframe(xx, yy, spherical_raw_map*1000, alpha=0.2)
 
     ax = fig.add_subplot(224)
     ax.set_title('Difference heat map', size=15)
-    im, cbar = heatmap(spherical_raw_map, ax=ax,
+    im, cbar = heatmap(spherical_raw_map*1000, ax=ax,
                        cmap="hot", cbarlabel='depth variation')
 
     ####################  Distortion Map Export  #######################
@@ -316,28 +325,33 @@ if __name__ == '__main__':
     # Plot
     ax.scatter(x, y, z, s=0.1, alpha=0.4, c='k')
     # ax.set_title('Ideal Flat Surface', size=26, y=1.01)
-    ax.set_xlabel('X', size=20, labelpad=10)
-    ax.set_ylabel('Y', size=20, labelpad=10)
-    ax.set_zlabel('Z', size=20, labelpad=14)
+    #ax.set_xlabel('X', size=20, labelpad=10)
+    #ax.set_ylabel('Y', size=20, labelpad=10)
+    #ax.set_zlabel('Z', size=20, labelpad=14)
 
     # Plot limits
     mean_radius = maxZ
     radius_low, radius_high = mean_radius - 5, mean_radius + 5
     ax.set_xlim([0, data.shape[0]])
     ax.set_ylim([0, data.shape[1]])
-    ax.set_zlim([radius_low, radius_high])
+    #ax.set_zlim([radius_low, radius_high])
     ax.xaxis.set_rotate_label(False)
     ax.zaxis.set_tick_params(pad=7)
 
     ax.xaxis.set_tick_params(labelsize=15)
     ax.yaxis.set_tick_params(labelsize=15)
     ax.zaxis.set_tick_params(labelsize=15)
+
+    ax.xaxis.set_ticklabels([])
+    ax.yaxis.set_ticklabels([])
+    ax.zaxis.set_ticklabels([])
+
     #plt.autoscale()
     fig.tight_layout()
 
     # Save figure
     pic_dis = '../plots/ideal_surface_no_title.PNG'
-    # plt.axis('off')
+    #plt.axis('off')
 
     fig.savefig(pic_dis, dpi=600,
                 transparent=True,
@@ -358,16 +372,16 @@ if __name__ == '__main__':
     # Plot
     ax.scatter(th, phi, radius, s=0.1, alpha=0.5, c=colours)
     # ax.set_title('Extracted Surface', size=26,y=1.01)
-    ax.set_xlabel('Theta', size= 20, labelpad = 10)
-    ax.set_ylabel('Phi', size=20, labelpad = 10)
-    ax.set_zlabel('Radius', size=20, labelpad = 14)
+    #ax.set_xlabel('Theta', size= 20, labelpad = 10)
+    #ax.set_ylabel('Phi', size=20, labelpad = 10)
+    #ax.set_zlabel('Radius', size=20, labelpad = 14)
 
     # Plot limits
     mean_radius = np.mean(radius)
     radius_low, radius_high = mean_radius - 0.1, mean_radius + 0.1
     ax.set_xlim([0.0, 1.0])
     ax.set_ylim([0.0, 1.0])
-    ax.set_zlim([radius_low, radius_high])
+    #ax.set_zlim([radius_low, radius_high])
     ax.xaxis.set_rotate_label(False)
     ax.zaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     ax.zaxis.set_tick_params(pad=7)
@@ -375,6 +389,10 @@ if __name__ == '__main__':
     ax.xaxis.set_tick_params(labelsize=15)
     ax.yaxis.set_tick_params(labelsize=15)
     ax.zaxis.set_tick_params(labelsize=15)
+
+    ax.xaxis.set_ticklabels([])
+    ax.yaxis.set_ticklabels([])
+    ax.zaxis.set_ticklabels([])
 
     fig.tight_layout()
 
@@ -401,16 +419,16 @@ if __name__ == '__main__':
     # Plot
     ax.scatter(th_ideal, phi_ideal, radius_ideal, s=0.1, alpha=0.5, c=colours)
     # ax.set_title('Fitted Surface', size=26, y=1.01)
-    ax.set_xlabel('Theta', size=20, labelpad=10)
-    ax.set_ylabel('Phi', size=20, labelpad=10)
-    ax.set_zlabel('Radius', size=20, labelpad=14)
+    #ax.set_xlabel('Theta', size=20, labelpad=10)
+    #ax.set_ylabel('Phi', size=20, labelpad=10)
+    #ax.set_zlabel('Radius', size=20, labelpad=14)
 
     # Plot limits
     mean_radius = np.mean(radius)
     radius_low, radius_high = mean_radius - 0.1, mean_radius + 0.1
     ax.set_xlim([0.0, 1.0])
     ax.set_ylim([0.0, 1.0])
-    ax.set_zlim([radius_low, radius_high])
+    #ax.set_zlim([radius_low, radius_high])
     ax.xaxis.set_rotate_label(False)
     ax.zaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     ax.zaxis.set_tick_params(pad=7)
@@ -419,11 +437,15 @@ if __name__ == '__main__':
     ax.yaxis.set_tick_params(labelsize=15)
     ax.zaxis.set_tick_params(labelsize=15)
 
+    ax.xaxis.set_ticklabels([])
+    ax.yaxis.set_ticklabels([])
+    ax.zaxis.set_ticklabels([])
+
     fig.tight_layout()
 
     # Save figure
     pic_dis = '../plots/fitted_surface_no_title.PNG'
-    # plt.axis('off')
+    #plt.axis('off')
 
     fig.savefig(pic_dis, dpi=600,
                 transparent=True,
@@ -435,7 +457,7 @@ if __name__ == '__main__':
     # ax.set_title('Residual Error', size=26)
 
     # Plot the heatmap
-    im = ax.imshow(np.abs(spherical_raw_map*100), cmap="hot")
+    im = ax.imshow(np.abs(spherical_raw_map*1000), cmap="hot")
 
     # Create colorbar
     cbar = ax.figure.colorbar(im)

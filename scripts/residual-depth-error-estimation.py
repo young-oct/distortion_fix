@@ -24,7 +24,10 @@ from tools.plot import angle_est,heatmap
 import pandas as pd
 import seaborn as sns
 
-def CalculateResidualError(mean_err_list, std_err_list, data_sets, enable_plots=False, cutoff=32, outter_cutoff_percent=0.75, bottom_crop_off=5):
+from sklearn.metrics import mean_squared_error
+import math
+
+def CalculateResidualError(mean_err_list, std_err_list, rmse_list, data_sets, enable_plots=False, cutoff=32, outter_cutoff_percent=0.75, bottom_crop_off=5):
     for j in range(1, len(data_sets)):
         data = load_from_oct_file_reversed(data_sets[j], clean=False)
         vmin, vmax = int(0), 255
@@ -97,6 +100,11 @@ def CalculateResidualError(mean_err_list, std_err_list, data_sets, enable_plots=
         mean_depth_error_non_zero = np.nanmean(dl_map_nan)
         std_depth_error_non_zero = np.nanstd(dl_map_nan)
 
+        # Calculate MSE
+        dl_map_cropped = dl_map_nan[~np.isnan(dl_map_nan)]
+        MSE = mean_squared_error(dl_map_cropped, np.zeros(len(dl_map_cropped)))
+        rmse_list.append((z_mean, MSE, len(dl_map_cropped)))
+
         # Append the residual error measures
         mean_err_list.append((z_mean, mean_depth_error_non_zero))
         std_err_list.append((z_mean, std_depth_error_non_zero))
@@ -157,9 +165,10 @@ if __name__ == '__main__':
     # error list (corrected)
     mean_err_list = []
     std_err_list = []
+    mse_list = []
 
     data_sets = natsorted(glob.glob(r'D:\Paper Datasets\residual_depth_error\flat surface - deconv - corrected/*.oct'))
-    CalculateResidualError(mean_err_list, std_err_list, data_sets)
+    CalculateResidualError(mean_err_list, std_err_list, mse_list, data_sets)
 
     # Convert to numpy arrays
     mean_err_list = np.asarray(mean_err_list)
@@ -169,9 +178,10 @@ if __name__ == '__main__':
     # error list (uncorrected)
     mean_err_list_uncorr = []
     std_err_list_uncorr = []
+    mse_list_uncorr = []
 
     data_sets_uncorr = natsorted(glob.glob(r'D:\Paper Datasets\residual_depth_error\flat surface - deconv/*.oct'))
-    CalculateResidualError(mean_err_list_uncorr, std_err_list_uncorr, data_sets_uncorr)
+    CalculateResidualError(mean_err_list_uncorr, std_err_list_uncorr, mse_list_uncorr, data_sets_uncorr)
 
     # Convert to numpy arrays
     mean_err_list_uncorr = np.asarray(mean_err_list_uncorr)
@@ -181,19 +191,44 @@ if __name__ == '__main__':
     # error list (uncorrected)
     mean_err_list_corr_no_lat = []
     std_err_list_corr_no_lat = []
+    mse_list_corr_no_lat = []
 
     data_sets_corr_no_lat = natsorted(glob.glob(r'D:\Paper Datasets\residual_depth_error\flat surface - deconv - corrected - no lateral correction/*.oct'))
-    CalculateResidualError(mean_err_list_corr_no_lat, std_err_list_corr_no_lat, data_sets_corr_no_lat)
+    CalculateResidualError(mean_err_list_corr_no_lat, std_err_list_corr_no_lat, mse_list_corr_no_lat, data_sets_corr_no_lat)
 
     # Convert to numpy arrays
     mean_err_list_corr_no_lat = np.asarray(mean_err_list_corr_no_lat)
     std_err_list_corr_no_lat = np.asarray(std_err_list_corr_no_lat)
 
     ####################################################################################################################
+
+
+    ####################################################################################################################
     # Plot residual error results
     Depth_res = 40.0
     Depth_dim = 330
     Depth_dim_phy = 13.2
+
+    loc, mse, num = zip(*mse_list)
+    mse = np.asarray(mse)
+    num = np.asarray(num)
+
+    rmse = np.sqrt(np.sum(mse*num)/np.sum(num))
+    rmse_um = Depth_res * Depth_dim * rmse
+
+    _, mse_uncorr, num_uncorr = zip(*mse_list_uncorr)
+    mse_uncorr = np.asarray(mse_uncorr)
+    num_uncorr = np.asarray(num_uncorr)
+
+    rmse_uncorr = np.sqrt(np.sum(mse_uncorr*num_uncorr)/np.sum(num_uncorr))
+    rmse_um_uncorr = Depth_res * Depth_dim * rmse_uncorr
+
+    _, mse_corr_no_lat, num_corr_no_lat = zip(*mse_list_corr_no_lat)
+    mse_corr_no_lat = np.asarray(mse_corr_no_lat)
+    num_corr_no_lat = np.asarray(num_corr_no_lat)
+
+    rmse_corr_no_lat = np.sqrt(np.sum(mse_corr_no_lat*num_corr_no_lat)/np.sum(num_corr_no_lat))
+    rmse_um_corr_no_lat = Depth_res * Depth_dim * rmse_corr_no_lat
 
     depth_index = Depth_dim_phy*(mean_err_list[:,0]/Depth_dim)
     corrected_depth_mean_error = Depth_res*Depth_dim*mean_err_list[:,1]
